@@ -33,7 +33,9 @@ const StudentResult = () => {
           incorrectCount: parsed.incorrect,
           unansweredCount: parsed.unattempted,
           score: parsed.score,
-          testId: { name: parsed.testName || 'Practice Test', totalMarks: parsed.totalMarks || parsed.questions.length }
+          testId: { name: parsed.testName || 'Practice Test', totalMarks: parsed.totalMarks || parsed.questions.length },
+          rank: parsed.rank,
+          totalStudents: parsed.totalStudents
         });
         setLoading(false);
         return;
@@ -41,7 +43,7 @@ const StudentResult = () => {
 
       try {
         const { data } = await api.get(`/attempts/${id}`, auth());
-        setAttempt(data.attempt);
+        setAttempt({ ...data.attempt, rank: data.rank, totalStudents: data.totalStudents });
       } catch (error) {
         console.error(error);
       } finally {
@@ -89,14 +91,16 @@ const StudentResult = () => {
       accuracy: attempt.accuracy || (attempted ? Math.round((correct / attempted) * 100) : 0),
       testName: attempt.testId?.name || 'Unknown Test',
       totalMarks: attempt.testId?.totalMarks || totalQuestions,
-      sampleQuestions
+      sampleQuestions,
+      rank: attempt.rank,
+      totalStudents: attempt.totalStudents
     };
   }, [attempt, language]);
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-100">Loading analysis...</div>;
   if (!mappedData) return <div className="min-h-screen flex items-center justify-center bg-slate-100 p-10 text-center"><p className="text-xl">Result not found or access denied.</p></div>;
 
-  const { correct, incorrect, unattempted, accuracy, testName, totalMarks, score, sampleQuestions } = mappedData;
+  const { correct, incorrect, unattempted, accuracy, testName, totalMarks, score, sampleQuestions, rank, totalStudents } = mappedData;
 
   const pieData = [
     { name: 'Correct', value: correct, color: '#10b981' }, 
@@ -144,12 +148,23 @@ const StudentResult = () => {
                     <h1 className="mt-2 text-3xl font-bold">Your performance report</h1>
                     <p className="mt-2 text-sm text-slate-300">Review every answer and use the topic analysis to plan your next revision.</p>
                 </div>
-                <div className="flex items-center gap-4 rounded-2xl bg-white/10 px-5 py-4 ring-1 ring-white/15">
-                    <Trophy className="text-amber-300" size={32} />
-                    <div>
-                        <p className="text-3xl font-bold">{score}<span className="text-base text-slate-300"> / {totalMarks}</span></p>
-                        <p className="text-xs font-medium text-slate-300">Score Achieved</p>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex items-center gap-4 rounded-2xl bg-white/10 px-5 py-4 ring-1 ring-white/15">
+                      <Trophy className="text-amber-300" size={32} />
+                      <div>
+                          <p className="text-3xl font-bold">{score}<span className="text-base text-slate-300"> / {totalMarks}</span></p>
+                          <p className="text-xs font-medium text-slate-300">Score Achieved</p>
+                      </div>
+                  </div>
+                  {rank !== undefined && (
+                    <div className="flex items-center gap-4 rounded-2xl bg-white/10 px-5 py-4 ring-1 ring-white/15">
+                        <Trophy className="text-blue-300" size={32} />
+                        <div>
+                            <p className="text-3xl font-bold">#{rank}<span className="text-base text-slate-300"> / {totalStudents}</span></p>
+                            <p className="text-xs font-medium text-slate-300">Class Rank</p>
+                        </div>
                     </div>
+                  )}
                 </div>
             </div>
             <div className="absolute -right-10 -top-14 h-48 w-48 rounded-full bg-blue-500/20 blur-2xl" />

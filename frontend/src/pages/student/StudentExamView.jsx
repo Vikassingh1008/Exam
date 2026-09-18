@@ -107,7 +107,13 @@ const StudentExamView = () => {
       const { data } = await api.post('/attempts', payload, { headers: { Authorization: `Bearer ${token}` } });
       
       // Store in session storage for immediate offline-like access if needed, though we can fetch it via API now
-      const result = { answers, correct, incorrect, attempted, unattempted: unattemptedCount, score, questions, testName: testData?.name || 'Practice Test', totalMarks: testData?.calculatedTotalMarks || questions.length };
+      const result = { 
+        answers, correct, incorrect, attempted, unattempted: unattemptedCount, 
+        score, questions, testName: testData?.name || 'Practice Test', 
+        totalMarks: testData?.calculatedTotalMarks || questions.length,
+        rank: data.rank,
+        totalStudents: data.totalStudents
+      };
       sessionStorage.setItem(`exam-result-${data.attempt._id}`, JSON.stringify(result));
       
       // Navigate to the newly created attempt ID, not the test ID

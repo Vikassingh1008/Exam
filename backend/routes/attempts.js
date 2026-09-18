@@ -38,7 +38,12 @@ router.post('/', authMiddleware, async (req, res) => {
     });
 
     await attempt.save();
-    res.status(201).json({ success: true, attempt });
+
+    // Calculate Rank
+    const totalStudents = await TestAttempt.countDocuments({ testId });
+    const rank = await TestAttempt.countDocuments({ testId, score: { $gt: score } }) + 1;
+
+    res.status(201).json({ success: true, attempt, rank, totalStudents });
   } catch (error) {
     console.error('Error creating attempt:', error);
     res.status(500).json({ success: false, message: 'Server Error' });
@@ -71,7 +76,11 @@ router.get('/:id', authMiddleware, async (req, res) => {
       
     if (!attempt) return res.status(404).json({ success: false, message: 'Attempt not found' });
     
-    res.json({ success: true, attempt });
+    // Calculate Rank
+    const totalStudents = await TestAttempt.countDocuments({ testId: attempt.testId._id });
+    const rank = await TestAttempt.countDocuments({ testId: attempt.testId._id, score: { $gt: attempt.score } }) + 1;
+
+    res.json({ success: true, attempt, rank, totalStudents });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server Error' });
   }
