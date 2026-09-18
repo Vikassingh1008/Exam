@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import ConfirmModal from '../../components/ConfirmModal';
 
-const emptyForm = { name: '', examName: '', testType: 'Full Mock Test', description: '', duration: 60, totalMarks: 100, negativeMarking: false, marksPerQuestion: 1, negativeMarks: 0, language: 'English', status: 'draft' };
+const emptyForm = { name: '', examName: '', testType: 'Full Mock Test', description: '', thumbnail: '', isFree: true, duration: 60, totalMarks: 100, negativeMarking: false, marksPerQuestion: 1, negativeMarks: 0, language: 'English', status: 'draft' };
 const auth = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` } });
 
 const AdminTests = () => {
@@ -182,6 +182,17 @@ const AdminTests = () => {
                   <option>Practice Test</option>
                   <option>Previous Year Paper</option>
                 </select>
+              </label>
+
+              <label className="text-sm font-medium text-gray-700">Pricing
+                <select value={form.isFree ? 'yes' : 'no'} onChange={e => setForm({ ...form, isFree: e.target.value === 'yes' })} className="mt-1.5 w-full rounded-lg border border-gray-300 p-2.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all bg-white">
+                  <option value="yes">Free</option>
+                  <option value="no">Paid</option>
+                </select>
+              </label>
+
+              <label className="text-sm font-medium text-gray-700 sm:col-span-2">Thumbnail URL (Optional)
+                <input value={form.thumbnail || ''} onChange={e => setForm({ ...form, thumbnail: e.target.value })} className="mt-1.5 w-full rounded-lg border border-gray-300 p-2.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all" placeholder="https://example.com/image.png" />
               </label>
 
               <label className="text-sm font-medium text-gray-700">Duration (minutes)

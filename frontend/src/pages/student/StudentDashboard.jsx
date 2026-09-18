@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, CalendarDays, Clock3, FileText, Play, ShieldCheck, Sparkles } from 'lucide-react';
+import { BookOpen, CalendarDays, Clock3, FileText, ShieldCheck, Landmark, Monitor, Briefcase, GraduationCap, ChevronRight, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../../api/axiosInstance';
+
+const getCategoryIcon = (name) => {
+  const n = name.toLowerCase();
+  if (n.includes('police') || n.includes('defense')) return <ShieldCheck size={24} />;
+  if (n.includes('bank') || n.includes('finance')) return <Landmark size={24} />;
+  if (n.includes('tech') || n.includes('computer')) return <Monitor size={24} />;
+  if (n.includes('ssc') || n.includes('railway')) return <Briefcase size={24} />;
+  return <GraduationCap size={24} />;
+};
 
 const StudentDashboard = () => {
   const [tests, setTests] = useState([]);
@@ -12,6 +21,26 @@ const StudentDashboard = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedExam, setSelectedExam] = useState('All');
   const [selectedTest, setSelectedTest] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [testsRes, examsRes, categoriesRes] = await Promise.all([
+          api.get('/tests'),
+          api.get('/exams'),
+          api.get('/categories')
+        ]);
+        setTests(testsRes.data.tests || []);
+        setExams(examsRes.data.exams || []);
+        setCategories(categoriesRes.data.categories || []);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const filteredTests = tests.filter(test => {
     const matchesSearch = test.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -34,26 +63,6 @@ const StudentDashboard = () => {
         return cat && cat.name === selectedCategory;
       });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [testsRes, examsRes, categoriesRes] = await Promise.all([
-          api.get('/tests'),
-          api.get('/exams'),
-          api.get('/categories')
-        ]);
-        setTests(testsRes.data.tests || []);
-        setExams(examsRes.data.exams || []);
-        setCategories(categoriesRes.data.categories || []);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
-
   const testsByGroup = {};
   filteredTests.forEach(test => {
     let groupName = 'Other';
@@ -74,82 +83,176 @@ const StudentDashboard = () => {
   const groupsToRender = Object.entries(testsByGroup);
 
   return (
-    <div className="space-y-7 pb-8">
-
-
-      <section className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm sm:p-7">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-widest text-blue-600">Practice library</p><h3 className="mt-1 text-2xl font-bold text-slate-900">Available Tests</h3><p className="mt-1 text-sm text-slate-500"></p></div><span className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-600">{filteredTests.length} live papers</span></div>
-
-        <div className="mb-6 flex flex-col sm:flex-row gap-4">
-          <select
-            value={selectedCategory}
-            onChange={e => { setSelectedCategory(e.target.value); setSelectedExam('All'); }}
-            className="w-full sm:max-w-xs rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white text-slate-700 font-medium"
-          >
-            <option value="All">All Categories</option>
-            {categories.map(c => (
-              <option key={c._id} value={c.name}>{c.name}</option>
-            ))}
-            <option value="Other Exams">Other Exams</option>
-          </select>
-
-          {selectedCategory !== 'All' && availableExams.length > 0 && (
-            <select
-              value={selectedExam}
-              onChange={e => setSelectedExam(e.target.value)}
-              className="w-full sm:max-w-xs rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white text-slate-700 font-medium"
-            >
-              <option value="All">All Subcategories</option>
-              {availableExams.map(e => (
-                <option key={e._id} value={e.name}>{e.name}</option>
-              ))}
-            </select>
-          )}
-
+    <div className="space-y-8 pb-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      {/* Search Header */}
+      <div className="bg-slate-900 rounded-3xl p-6 sm:p-12 text-center shadow-xl relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-400 via-transparent to-transparent"></div>
+        <h2 className="text-2xl sm:text-4xl font-extrabold text-white mb-3 sm:mb-4 relative z-10">What do you want to learn today?</h2>
+        <p className="text-slate-300 text-base sm:text-lg mb-6 sm:mb-8 relative z-10">Explore {tests.length} premium mock tests and previous year papers</p>
+        <div className="relative max-w-2xl mx-auto z-10">
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <Search className="h-5 w-5 text-slate-400" />
+          </div>
           <input
             type="text"
-            placeholder="Search by test title..."
+            className="block w-full pl-11 pr-4 py-3.5 sm:py-4 border-0 rounded-2xl bg-white/10 backdrop-blur-md text-white placeholder-slate-300 focus:ring-2 focus:ring-blue-500 focus:bg-white/20 transition-all text-base sm:text-lg"
+            placeholder="Search by test name, e.g. UP Police Mock 1..."
             value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-full sm:max-w-md rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
+      </div>
 
-        {loading ? (
-          <div className="py-10 text-center text-slate-500">Loading tests...</div>
-        ) : groupsToRender.length === 0 ? (
-          <div className="py-10 text-center text-slate-500">No test papers found for the selected category or search.</div>
-        ) : (
-          <div className="space-y-8">
-            {groupsToRender.map(([groupName, groupTests]) => (
-              <div key={groupName}>
-                <h4 className="text-lg font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100">{groupName}</h4>
-                <div className="divide-y divide-slate-100">
-                  {groupTests.map((paper, idx) => {
-                    const tones = ['bg-blue-50 text-blue-700', 'bg-violet-50 text-violet-700', 'bg-emerald-50 text-emerald-700'];
-                    const tone = tones[idx % tones.length];
-                    return (
-                      <article key={paper._id} className="flex flex-col gap-4 py-4 first:pt-0 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-start gap-4"><div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${tone}`}><BookOpen size={19} /></div><div><h4 className="font-bold text-slate-800">{paper.name}</h4><div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs font-medium text-slate-500"><span className="inline-flex items-center gap-1"><CalendarDays size={13} /> {new Date(paper.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span><span className="inline-flex items-center gap-1"><FileText size={13} /> {paper.totalMarks || 100} Marks</span><span className="inline-flex items-center gap-1"><Clock3 size={13} /> {paper.duration} min</span></div></div></div><button onClick={() => setSelectedTest(paper)} className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-blue-600">Start test</button></article>
-                    );
-                  })}
+      {loading ? (
+        <div className="py-20 text-center text-slate-500 animate-pulse font-medium text-lg">Loading amazing content...</div>
+      ) : (
+        <>
+          {/* Visual Browse Categories */}
+          <section className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-slate-900">Browse Categories</h3>
+            </div>
+            <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 no-scrollbar snap-x snap-mandatory">
+              <button
+                onClick={() => { setSelectedCategory('All'); setSelectedExam('All'); }}
+                className={`snap-start flex-shrink-0 w-32 sm:w-36 flex flex-col items-center justify-center gap-2 sm:gap-3 p-4 sm:p-5 rounded-3xl border transition-all duration-300 ${selectedCategory === 'All' ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-600/30 -translate-y-1' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300 hover:shadow-md'}`}
+              >
+                <div className={`p-3 sm:p-4 rounded-2xl ${selectedCategory === 'All' ? 'bg-white/20' : 'bg-slate-100 text-slate-600'}`}>
+                   <BookOpen className="w-6 h-6 sm:w-7 sm:h-7" />
                 </div>
+                <span className="font-bold text-xs sm:text-sm tracking-wide">All Tests</span>
+              </button>
+              
+              {categories.map(c => (
+                <button
+                  key={c._id}
+                  onClick={() => { setSelectedCategory(c.name); setSelectedExam('All'); }}
+                  className={`snap-start flex-shrink-0 w-32 sm:w-36 flex flex-col items-center justify-center gap-2 sm:gap-3 p-4 sm:p-5 rounded-3xl border transition-all duration-300 ${selectedCategory === c.name ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-600/30 -translate-y-1' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300 hover:shadow-md'}`}
+                >
+                  <div className={`p-3 sm:p-4 rounded-2xl ${selectedCategory === c.name ? 'bg-white/20' : c.colorTone || 'bg-slate-100 text-slate-600'}`}>
+                     {React.cloneElement(getCategoryIcon(c.name), { className: "w-6 h-6 sm:w-7 sm:h-7" })}
+                  </div>
+                  <span className="font-bold text-xs sm:text-sm tracking-wide text-center leading-tight">{c.name}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {/* Subcategory Pills (Exams) */}
+          {selectedCategory !== 'All' && availableExams.length > 0 && (
+            <section className="mb-10 animate-in fade-in slide-in-from-top-4 duration-500">
+              <div className="flex flex-wrap gap-3">
+                <button 
+                  onClick={() => setSelectedExam('All')}
+                  className={`px-5 py-2.5 rounded-full text-sm font-bold transition-all shadow-sm ${selectedExam === 'All' ? 'bg-slate-900 text-white shadow-slate-900/20' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'}`}
+                >
+                  All {selectedCategory} Exams
+                </button>
+                {availableExams.map(e => (
+                  <button 
+                    key={e._id}
+                    onClick={() => setSelectedExam(e.name)}
+                    className={`px-5 py-2.5 rounded-full text-sm font-bold transition-all shadow-sm ${selectedExam === e.name ? 'bg-slate-900 text-white shadow-slate-900/20' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'}`}
+                  >
+                    {e.name}
+                  </button>
+                ))}
               </div>
-            ))}
-          </div>
-        )}
-      </section>
+            </section>
+          )}
+
+          {/* Test Cards Grid */}
+          {groupsToRender.length === 0 ? (
+            <div className="py-20 text-center">
+               <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FileText className="text-slate-400" size={32} />
+               </div>
+               <h3 className="text-xl font-bold text-slate-800 mb-2">No tests found</h3>
+               <p className="text-slate-500">Try adjusting your category or search filters.</p>
+            </div>
+          ) : (
+            <div className="space-y-12">
+              {groupsToRender.map(([groupName, groupTests]) => (
+                <div key={groupName} className="animate-in fade-in duration-500">
+                  <div className="flex items-center justify-between mb-6">
+                     <h4 className="text-2xl font-extrabold text-slate-900">{groupName}</h4>
+                     <span className="text-sm font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">{groupTests.length} tests</span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {groupTests.map((paper) => (
+                      <article 
+                        key={paper._id} 
+                        onClick={() => setSelectedTest(paper)}
+                        className="group flex flex-col bg-white border border-slate-200/80 rounded-3xl overflow-hidden hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1.5 transition-all duration-300 cursor-pointer" 
+                      >
+                        {/* Thumbnail area */}
+                        <div className="relative aspect-[16/9] w-full bg-slate-100 overflow-hidden">
+                          {paper.thumbnail ? (
+                            <img src={paper.thumbnail} alt={paper.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 flex items-center justify-center group-hover:scale-105 transition-transform duration-700 ease-out">
+                              <span className="text-white font-black text-2xl opacity-20 tracking-widest uppercase rotate-[-10deg]">{paper.examName || 'TEST'}</span>
+                            </div>
+                          )}
+                          <div className="absolute top-3 left-3 flex gap-2">
+                            {paper.isFree !== false ? (
+                               <span className="bg-emerald-500 text-white text-xs font-black tracking-wide px-2.5 py-1 rounded-lg shadow-sm uppercase">FREE</span>
+                            ) : (
+                               <span className="bg-amber-500 text-white text-xs font-black tracking-wide px-2.5 py-1 rounded-lg shadow-sm uppercase">PREMIUM</span>
+                            )}
+                            {paper.testType && (
+                               <span className="bg-black/60 backdrop-blur-md text-white text-xs font-bold tracking-wide px-2.5 py-1 rounded-lg shadow-sm">{paper.testType}</span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="p-5 flex flex-col flex-grow">
+                          <h3 className="font-bold text-[1.1rem] text-slate-900 leading-snug mb-4 line-clamp-2 group-hover:text-blue-600 transition-colors">{paper.name}</h3>
+                          
+                          <div className="mt-auto grid grid-cols-2 gap-3 mb-5">
+                            <div className="flex items-center gap-2 text-sm text-slate-600 bg-slate-50 p-2 rounded-xl">
+                               <FileText size={16} className="text-blue-500"/> 
+                               <span className="font-bold">{paper.questions?.length || 0} Qs</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-slate-600 bg-slate-50 p-2 rounded-xl">
+                               <Clock3 size={16} className="text-amber-500"/> 
+                               <span className="font-bold">{paper.duration} Min</span>
+                            </div>
+                          </div>
+
+                          <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                            <span className="text-sm font-black text-slate-800 tracking-wide">VIEW NOW</span>
+                            <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-sm">
+                              <ChevronRight size={20} strokeWidth={3} />
+                            </div>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
 
       {selectedTest && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden p-6 animate-in fade-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-bold text-slate-800 mb-2">Ready to begin?</h3>
-            <p className="text-sm text-slate-600 leading-relaxed mb-6">
-              You are about to start the test: <strong className="text-slate-800">{selectedTest.name}</strong>.
-              Once you begin, the timer of <strong>{selectedTest.duration} minutes</strong> will start immediately. Please ensure you have a stable internet connection.
-            </p>
-            <div className="flex justify-end gap-3">
-              <button onClick={() => setSelectedTest(null)} className="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-100 transition-colors">Cancel</button>
-              <Link to={`/student/exam/${selectedTest._id}`} className="px-4 py-2 rounded-xl bg-blue-600 text-sm font-bold text-white hover:bg-blue-700 transition-colors">OK, Start</Link>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-8">
+               <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
+                  <BookOpen size={32} />
+               </div>
+               <h3 className="text-2xl font-black text-slate-900 mb-3 leading-tight">{selectedTest.name}</h3>
+               <p className="text-slate-600 leading-relaxed mb-8">
+                  You are about to start this test. The timer of <strong className="text-slate-900">{selectedTest.duration} minutes</strong> will begin immediately. Good luck!
+               </p>
+               <div className="flex flex-col sm:flex-row gap-3">
+                  <button onClick={() => setSelectedTest(null)} className="flex-1 px-4 py-3 rounded-2xl text-sm font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors text-center">Cancel</button>
+                  <Link to={`/student/exam/${selectedTest._id}`} className="flex-1 px-4 py-3 rounded-2xl bg-blue-600 text-sm font-bold text-white hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-600/30 transition-all text-center">Start Attempt</Link>
+               </div>
             </div>
           </div>
         </div>

@@ -70,31 +70,31 @@ const StudentHistory = () => {
             <table className="w-full text-left">
               <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                 <tr>
-                  <th className="px-6 py-4">Test Name</th>
-                  <th className="px-6 py-4">Date Taken</th>
-                  <th className="px-6 py-4">Score</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4 text-right">Action</th>
+                  <th className="px-6 py-4 whitespace-nowrap">Test Name</th>
+                  <th className="px-6 py-4 whitespace-nowrap">Date Taken</th>
+                  <th className="px-6 py-4 whitespace-nowrap">Score</th>
+                  <th className="px-6 py-4 whitespace-nowrap">Status</th>
+                  <th className="px-6 py-4 whitespace-nowrap text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                 {filteredAttempts.map((attempt) => (
                   <tr key={attempt._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="font-bold text-slate-800 dark:text-white">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="font-bold text-slate-800 dark:text-white truncate max-w-[200px] sm:max-w-[300px]">
                         {attempt.testId?.name || 'Unknown Test'}
                       </div>
                       <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1">
                         <Clock size={12}/> {attempt.testId?.duration || 0} mins • {attempt.testId?.totalMarks || 0} marks
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">
                       {new Date(attempt.startTime).toLocaleDateString('en-US', {
                         year: 'numeric', month: 'short', day: 'numeric',
                         hour: '2-digit', minute: '2-digit'
                       })}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <div className="font-bold text-slate-800 dark:text-white">
                         {attempt.score} <span className="text-slate-400 text-xs font-normal">/ {attempt.testId?.totalMarks || 0}</span>
                       </div>
@@ -102,7 +102,7 @@ const StudentHistory = () => {
                         {attempt.percentage?.toFixed(1) || 0}%
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
                         attempt.status === 'completed' 
                           ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' 
@@ -112,7 +112,7 @@ const StudentHistory = () => {
                         {attempt.status.replace('_', ' ').toUpperCase()}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
                       {attempt.status === 'completed' ? (
                         <Link 
                           to={`/student/results/${attempt._id}`}

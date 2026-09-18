@@ -5,6 +5,8 @@ const testSchema = new mongoose.Schema({
   examName: { type: String, required: true },
   testType: { type: String, enum: ['Full Mock Test', 'Section Test', 'Practice Test', 'Previous Year Paper'], default: 'Full Mock Test' },
   description: { type: String },
+  thumbnail: { type: String },
+  isFree: { type: Boolean, default: true },
   duration: { type: Number, required: true, default: 60 }, // in minutes
   totalMarks: { type: Number, required: true, default: 100 },
   passingMarks: { type: Number, default: 33 },
