@@ -15,7 +15,7 @@ const AdminLayout = () => {
 
   const navigation = [
     { name: 'Categories', href: '/vkadmin/categories', icon: LayoutDashboard },
-    { name: 'Exams', href: '/vkadmin/exams', icon: BookOpen },
+    { name: 'Exams / Subcategories', href: '/vkadmin/exams', icon: BookOpen },
     { name: 'Test Papers', href: '/vkadmin/tests', icon: ClipboardList },
   ];
 

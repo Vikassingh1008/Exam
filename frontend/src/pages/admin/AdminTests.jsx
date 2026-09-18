@@ -168,9 +168,9 @@ const AdminTests = () => {
                 <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="mt-1.5 w-full rounded-lg border border-gray-300 p-2.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all" placeholder="e.g. UP Police Mock Test 1" />
               </label>
               
-              <label className="text-sm font-medium text-gray-700">Select Exam / Category
+              <label className="text-sm font-medium text-gray-700">Select Exam / Subcategory
                 <select required value={form.examId || ''} onChange={e => setForm({ ...form, examId: e.target.value })} className="mt-1.5 w-full rounded-lg border border-gray-300 p-2.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all bg-white">
-                  <option value="">Select exam</option>
+                  <option value="">Select exam / subcategory</option>
                   {exams.map(exam => <option key={exam._id} value={exam._id}>{exam.name}</option>)}
                 </select>
               </label>
