@@ -10,11 +10,29 @@ const StudentDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedExam, setSelectedExam] = useState('All');
   const [selectedTest, setSelectedTest] = useState(null);
 
-  const filteredTests = tests.filter(test =>
-    test.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredTests = tests.filter(test => {
+    const matchesSearch = test.name.toLowerCase().includes(searchQuery.toLowerCase());
+    if (!matchesSearch) return false;
+
+    const exam = exams.find(e => e.name === test.examName);
+    const category = categories.find(c => c._id === exam?.category);
+    const categoryName = category ? category.name : 'Other Exams';
+
+    if (selectedCategory !== 'All' && categoryName !== selectedCategory) return false;
+    if (selectedExam !== 'All' && test.examName !== selectedExam) return false;
+
+    return true;
+  });
+
+  const availableExams = selectedCategory === 'All' 
+    ? [] 
+    : exams.filter(e => {
+        const cat = categories.find(c => c._id === e.category);
+        return cat && cat.name === selectedCategory;
+      });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -36,21 +54,24 @@ const StudentDashboard = () => {
     fetchData();
   }, []);
 
-  const testsByCategory = {};
+  const testsByGroup = {};
   filteredTests.forEach(test => {
-    const exam = exams.find(e => e.name === test.examName);
-    const category = categories.find(c => c._id === exam?.category);
-    const categoryName = category ? category.name : 'Other Exams';
-
-    if (!testsByCategory[categoryName]) {
-      testsByCategory[categoryName] = [];
+    let groupName = 'Other';
+    if (selectedCategory === 'All') {
+      const exam = exams.find(e => e.name === test.examName);
+      const category = categories.find(c => c._id === exam?.category);
+      groupName = category ? category.name : 'Other Exams';
+    } else {
+      groupName = test.examName || 'Other Tests';
     }
-    testsByCategory[categoryName].push(test);
+
+    if (!testsByGroup[groupName]) {
+      testsByGroup[groupName] = [];
+    }
+    testsByGroup[groupName].push(test);
   });
 
-  const categoriesToRender = Object.entries(testsByCategory).filter(([categoryName]) =>
-    selectedCategory === 'All' || categoryName === selectedCategory
-  );
+  const groupsToRender = Object.entries(testsByGroup);
 
   return (
     <div className="space-y-7 pb-8">
@@ -62,7 +83,7 @@ const StudentDashboard = () => {
         <div className="mb-6 flex flex-col sm:flex-row gap-4">
           <select
             value={selectedCategory}
-            onChange={e => setSelectedCategory(e.target.value)}
+            onChange={e => { setSelectedCategory(e.target.value); setSelectedExam('All'); }}
             className="w-full sm:max-w-xs rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white text-slate-700 font-medium"
           >
             <option value="All">All Categories</option>
@@ -71,6 +92,19 @@ const StudentDashboard = () => {
             ))}
             <option value="Other Exams">Other Exams</option>
           </select>
+
+          {selectedCategory !== 'All' && availableExams.length > 0 && (
+            <select
+              value={selectedExam}
+              onChange={e => setSelectedExam(e.target.value)}
+              className="w-full sm:max-w-xs rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white text-slate-700 font-medium"
+            >
+              <option value="All">All Subcategories</option>
+              {availableExams.map(e => (
+                <option key={e._id} value={e.name}>{e.name}</option>
+              ))}
+            </select>
+          )}
 
           <input
             type="text"
@@ -83,15 +117,15 @@ const StudentDashboard = () => {
 
         {loading ? (
           <div className="py-10 text-center text-slate-500">Loading tests...</div>
-        ) : categoriesToRender.length === 0 ? (
+        ) : groupsToRender.length === 0 ? (
           <div className="py-10 text-center text-slate-500">No test papers found for the selected category or search.</div>
         ) : (
           <div className="space-y-8">
-            {categoriesToRender.map(([categoryName, categoryTests]) => (
-              <div key={categoryName}>
-                <h4 className="text-lg font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100">{categoryName}</h4>
+            {groupsToRender.map(([groupName, groupTests]) => (
+              <div key={groupName}>
+                <h4 className="text-lg font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100">{groupName}</h4>
                 <div className="divide-y divide-slate-100">
-                  {categoryTests.map((paper, idx) => {
+                  {groupTests.map((paper, idx) => {
                     const tones = ['bg-blue-50 text-blue-700', 'bg-violet-50 text-violet-700', 'bg-emerald-50 text-emerald-700'];
                     const tone = tones[idx % tones.length];
                     return (
