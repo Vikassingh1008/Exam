@@ -98,7 +98,6 @@ const AdminCategories = () => {
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="p-4 font-semibold text-gray-600">Category Name</th>
-                <th className="p-4 font-semibold text-gray-600">Slug</th>
                 <th className="p-4 font-semibold text-gray-600">Status</th>
                 <th className="p-4 font-semibold text-gray-600 text-right">Actions</th>
               </tr>
@@ -109,7 +108,6 @@ const AdminCategories = () => {
               ) : categories.map((cat) => (
                 <tr key={cat._id} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="p-4 font-medium text-gray-800">{cat.name}</td>
-                  <td className="p-4 text-gray-600">{cat.slug}</td>
                   <td className="p-4">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${cat.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                       {cat.status}
@@ -137,10 +135,6 @@ const AdminCategories = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
                 <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value, slug: e.target.value.toLowerCase().replace(/ /g, '-')})} className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Slug</label>
-                <input required type="text" value={formData.slug} onChange={e => setFormData({...formData, slug: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>

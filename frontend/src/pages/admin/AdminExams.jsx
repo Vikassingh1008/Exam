@@ -76,12 +76,12 @@ const AdminExams = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Manage Exams (Subcategories)</h2>
+        <h2 className="text-2xl font-bold text-gray-800">Manage Exams</h2>
         <button 
           onClick={() => { setEditingId(null); setFormData({ name: '', slug: '', description: '', category: '', status: 'active' }); setIsModalOpen(true); }}
           className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
-          <Plus size={20} /> Create Exam / Subcategory
+          <Plus size={20} /> Create Exam
         </button>
       </div>
 
@@ -92,8 +92,8 @@ const AdminExams = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="p-4 font-semibold text-gray-600">Exam / Subcategory Name</th>
-                <th className="p-4 font-semibold text-gray-600">Parent Category</th>
+                <th className="p-4 font-semibold text-gray-600">Exam Name</th>
+                <th className="p-4 font-semibold text-gray-600">Category</th>
                 <th className="p-4 font-semibold text-gray-600">Status</th>
                 <th className="p-4 font-semibold text-gray-600 text-right">Actions</th>
               </tr>
@@ -126,7 +126,7 @@ const AdminExams = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
             <div className="p-6 border-b border-gray-200">
-              <h3 className="text-xl font-bold">{editingId ? 'Edit Exam / Subcategory' : 'Create Exam / Subcategory'}</h3>
+              <h3 className="text-xl font-bold">{editingId ? 'Edit Exam' : 'Create Exam'}</h3>
             </div>
             <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4">
               <div>
@@ -134,11 +134,7 @@ const AdminExams = () => {
                 <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value, slug: e.target.value.toLowerCase().replace(/ /g, '-')})} className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Slug</label>
-                <input required type="text" value={formData.slug} onChange={e => setFormData({...formData, slug: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Parent Category</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                 <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
                   <option value="">No Category</option>
                   {categories.map(cat => (
