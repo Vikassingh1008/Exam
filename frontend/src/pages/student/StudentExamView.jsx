@@ -124,7 +124,16 @@ const StudentExamView = () => {
     }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100">Loading test...</div>;
+  if (loading) return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900 gap-6">
+      <div className="relative flex justify-center items-center w-20 h-20">
+        <div className="absolute inset-0 rounded-full border-t-2 border-blue-500 animate-spin"></div>
+        <div className="absolute inset-2 rounded-full border-r-2 border-cyan-400 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+        <div className="absolute inset-4 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 animate-pulse shadow-lg shadow-blue-500/30"></div>
+      </div>
+      <p className="text-sm font-bold text-slate-300 tracking-[0.2em] uppercase animate-pulse">Loading Test Environment</p>
+    </div>
+  );
   if (!questions.length) return <div className="min-h-screen flex items-center justify-center bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100">Test not found or has no questions.</div>;
 
   const t = {

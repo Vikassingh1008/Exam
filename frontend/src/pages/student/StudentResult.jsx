@@ -144,7 +144,16 @@ const StudentResult = () => {
     };
   }, [attempt, language]);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-white"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
+  if (loading) return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-6">
+      <div className="relative flex justify-center items-center w-20 h-20">
+        <div className="absolute inset-0 rounded-full border-t-2 border-blue-500 animate-spin"></div>
+        <div className="absolute inset-2 rounded-full border-r-2 border-cyan-400 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+        <div className="absolute inset-4 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 animate-pulse shadow-lg shadow-blue-500/30"></div>
+      </div>
+      <p className="text-sm font-bold text-slate-400 tracking-[0.2em] uppercase animate-pulse">Loading Results</p>
+    </div>
+  );
   if (!mappedData) return <div className="min-h-screen flex items-center justify-center bg-white p-10 text-center"><p className="text-xl">Result not found.</p></div>;
 
   const { correct, incorrect, unattempted, accuracy, percentile, testName, totalMarks, score, questionsList, sections, rank, totalStudents, totalQuestions, attempted } = mappedData;
