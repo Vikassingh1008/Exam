@@ -35,7 +35,7 @@ function App() {
       <Toaster position="top-center" />
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<Navigate to="/student/exams" replace />} />
         <Route path="/login" element={<StudentLogin />} />
         <Route path="/register" element={<StudentRegister />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
