@@ -83,57 +83,69 @@ const StudentDashboard = () => {
   const groupsToRender = Object.entries(testsByGroup);
 
   return (
-    <div className="space-y-8 pb-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      
-      {/* Search Header */}
-      <div className="bg-slate-900 rounded-3xl p-6 sm:p-12 text-center shadow-xl relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-400 via-transparent to-transparent"></div>
-        <h2 className="text-2xl sm:text-4xl font-extrabold text-white mb-3 sm:mb-4 relative z-10">What do you want to learn today?</h2>
-        <p className="text-slate-300 text-base sm:text-lg mb-6 sm:mb-8 relative z-10">Explore {tests.length} premium mock tests and previous year papers</p>
-        <div className="relative max-w-2xl mx-auto z-10">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-slate-400" />
-          </div>
-          <input
-            type="text"
-            className="block w-full pl-11 pr-4 py-3.5 sm:py-4 border-0 rounded-2xl bg-white/10 backdrop-blur-md text-white placeholder-slate-300 focus:ring-2 focus:ring-blue-500 focus:bg-white/20 transition-all text-base sm:text-lg"
-            placeholder="Search by test name, e.g. UP Police Mock 1..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+      {/* Sleek Search Header */}
+      <div className="relative mb-10">
+        <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+          <Search className="h-6 w-6 text-indigo-400" />
+        </div>
+        <input
+          type="text"
+          className="block w-full pl-14 pr-6 py-4 border-0 rounded-full bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] text-slate-900 placeholder-slate-400 focus:ring-4 focus:ring-indigo-500/20 transition-all text-lg font-medium outline-none"
+          placeholder="Search for mock tests, previous year papers, or exams..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-2">
+           <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">⌘K</span>
         </div>
       </div>
 
       {loading ? (
-        <div className="py-20 text-center text-slate-500 animate-pulse font-medium text-lg">Loading amazing content...</div>
+        <div className="py-20 flex justify-center items-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        </div>
       ) : (
         <>
           {/* Visual Browse Categories */}
-          <section className="mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold text-slate-900">Browse Categories</h3>
+          <section className="mb-10">
+            <div className="flex items-center justify-between mb-6 px-1">
+              <h3 className="text-xl font-bold text-slate-800 tracking-tight">Explore Categories</h3>
             </div>
-            <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 no-scrollbar snap-x snap-mandatory">
+            <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar snap-x snap-mandatory px-1">
               <button
                 onClick={() => { setSelectedCategory('All'); setSelectedExam('All'); }}
-                className={`snap-start flex-shrink-0 w-32 sm:w-36 flex flex-col items-center justify-center gap-2 sm:gap-3 p-4 sm:p-5 rounded-3xl border transition-all duration-300 ${selectedCategory === 'All' ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-600/30 -translate-y-1' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300 hover:shadow-md'}`}
+                className={`snap-start flex-shrink-0 flex items-center gap-3 px-6 py-4 rounded-2xl transition-all duration-300 border ${
+                  selectedCategory === 'All' 
+                    ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white border-transparent shadow-[0_8px_20px_rgba(79,70,229,0.3)] transform -translate-y-1' 
+                    : 'bg-white text-slate-700 border-slate-100 hover:border-indigo-200 hover:shadow-md'
+                }`}
               >
-                <div className={`p-3 sm:p-4 rounded-2xl ${selectedCategory === 'All' ? 'bg-white/20' : 'bg-slate-100 text-slate-600'}`}>
-                   <BookOpen className="w-6 h-6 sm:w-7 sm:h-7" />
+                <div className={`p-2.5 rounded-xl ${selectedCategory === 'All' ? 'bg-white/20' : 'bg-indigo-50 text-indigo-600'}`}>
+                   <BookOpen size={22} />
                 </div>
-                <span className="font-bold text-xs sm:text-sm tracking-wide">All Tests</span>
+                <div className="text-left">
+                  <span className="block font-bold text-sm">All Tests</span>
+                  <span className={`text-[11px] font-medium ${selectedCategory === 'All' ? 'text-indigo-100' : 'text-slate-400'}`}>Explore everything</span>
+                </div>
               </button>
               
               {categories.map(c => (
                 <button
                   key={c._id}
                   onClick={() => { setSelectedCategory(c.name); setSelectedExam('All'); }}
-                  className={`snap-start flex-shrink-0 w-32 sm:w-36 flex flex-col items-center justify-center gap-2 sm:gap-3 p-4 sm:p-5 rounded-3xl border transition-all duration-300 ${selectedCategory === c.name ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-600/30 -translate-y-1' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300 hover:shadow-md'}`}
+                  className={`snap-start flex-shrink-0 flex items-center gap-3 px-6 py-4 rounded-2xl transition-all duration-300 border ${
+                    selectedCategory === c.name 
+                      ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white border-transparent shadow-[0_8px_20px_rgba(79,70,229,0.3)] transform -translate-y-1' 
+                      : 'bg-white text-slate-700 border-slate-100 hover:border-indigo-200 hover:shadow-md'
+                  }`}
                 >
-                  <div className={`p-3 sm:p-4 rounded-2xl ${selectedCategory === c.name ? 'bg-white/20' : c.colorTone || 'bg-slate-100 text-slate-600'}`}>
-                     {React.cloneElement(getCategoryIcon(c.name), { className: "w-6 h-6 sm:w-7 sm:h-7" })}
+                  <div className={`p-2.5 rounded-xl ${selectedCategory === c.name ? 'bg-white/20' : 'bg-indigo-50 text-indigo-600'}`}>
+                     {React.cloneElement(getCategoryIcon(c.name), { size: 22 })}
                   </div>
-                  <span className="font-bold text-xs sm:text-sm tracking-wide text-center leading-tight">{c.name}</span>
+                  <div className="text-left">
+                    <span className="block font-bold text-sm whitespace-nowrap">{c.name}</span>
+                    <span className={`text-[11px] font-medium ${selectedCategory === c.name ? 'text-indigo-100' : 'text-slate-400'}`}>Exams</span>
+                  </div>
                 </button>
               ))}
             </div>
