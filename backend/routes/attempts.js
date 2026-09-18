@@ -63,6 +63,35 @@ router.get('/my-history', authMiddleware, async (req, res) => {
   }
 });
 
+// @route   GET /api/attempts/leaderboard/:testId
+// @desc    Get top 10 leaderboard for a test
+router.get('/leaderboard/:testId', authMiddleware, async (req, res) => {
+  try {
+    const attempts = await TestAttempt.find({ testId: req.params.testId })
+      .populate('studentId', 'name')
+      .sort({ score: -1, timeTaken: 1 }) // Highest score first, then lowest time
+      .limit(20);
+      
+    // Filter to get only the best attempt per unique student
+    const uniqueStudents = new Set();
+    const leaderboard = [];
+    
+    for (const attempt of attempts) {
+      if (!attempt.studentId) continue;
+      const sId = attempt.studentId._id.toString();
+      if (!uniqueStudents.has(sId)) {
+        uniqueStudents.add(sId);
+        leaderboard.push(attempt);
+        if (leaderboard.length >= 10) break;
+      }
+    }
+    
+    res.json({ success: true, leaderboard });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+});
+
 // @route   GET /api/attempts/:id
 // @desc    Get specific attempt details for analysis
 router.get('/:id', authMiddleware, async (req, res) => {

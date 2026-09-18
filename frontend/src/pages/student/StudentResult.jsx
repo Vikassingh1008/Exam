@@ -16,6 +16,7 @@ const StudentResult = () => {
   const [viewMode, setViewMode] = useState('overview'); // 'overview' | 'analysis'
   const [analysisFilter, setAnalysisFilter] = useState('all'); // all, correct, incorrect, unattempted, marked
   const [language, setLanguage] = useState('en');
+  const [leaderboard, setLeaderboard] = useState([]);
   
   // For analysis view
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
@@ -64,6 +65,13 @@ const StudentResult = () => {
             percentile: data.percentile || 0
           });
         }
+
+        // Fetch Leaderboard
+        try {
+          const testIdStr = data.attempt.testId?._id || data.attempt.testId;
+          const lbData = await api.get(`/attempts/leaderboard/${testIdStr}`, auth());
+          setLeaderboard(lbData.data.leaderboard);
+        } catch (e) { console.error('Leaderboard fetch failed', e); }
       } catch (error) {
         console.error(error);
         // Fallback to local storage if API fails completely
@@ -254,7 +262,10 @@ const StudentResult = () => {
               <button onClick={() => { setViewMode('analysis'); setAnalysisFilter('correct'); setActiveQuestionIndex(0); }} className={`pb-5 pt-5 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${viewMode === 'analysis' && analysisFilter === 'correct' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>Correct</button>
               <button onClick={() => { setViewMode('analysis'); setAnalysisFilter('incorrect'); setActiveQuestionIndex(0); }} className={`pb-5 pt-5 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${viewMode === 'analysis' && analysisFilter === 'incorrect' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>Incorrect</button>
               <button onClick={() => { setViewMode('analysis'); setAnalysisFilter('unattempted'); setActiveQuestionIndex(0); }} className={`pb-5 pt-5 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${viewMode === 'analysis' && analysisFilter === 'unattempted' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>Unattempted</button>
+              <button onClick={() => setViewMode('leaderboard')} className={`pb-5 pt-5 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${viewMode === 'leaderboard' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>Leaderboard</button>
             </div>
+            
+            <div className="flex items-center gap-3 shrink-0"></div>
           </div>
           
           <div className="flex items-center gap-4">
@@ -619,6 +630,53 @@ const StudentResult = () => {
 
           </div>
         </main>
+      )}
+
+      {viewMode === 'leaderboard' && (
+        <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="p-6 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2"><Trophy className="text-yellow-500" /> Global Leaderboard</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50/50 text-xs uppercase tracking-wider text-gray-500">
+                    <th className="p-4 font-bold">Rank</th>
+                    <th className="p-4 font-bold">Student Name</th>
+                    <th className="p-4 font-bold">Score</th>
+                    <th className="p-4 font-bold">Time Taken</th>
+                    <th className="p-4 font-bold">Accuracy</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-sm">
+                  {leaderboard.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="p-8 text-center text-gray-500">No students have taken this test yet.</td>
+                    </tr>
+                  ) : (
+                    leaderboard.map((lb, idx) => (
+                      <tr key={lb._id} className={idx < 3 ? "bg-amber-50/30" : "hover:bg-gray-50"}>
+                        <td className="p-4 font-bold">
+                          {idx === 0 ? <span className="text-yellow-500 flex items-center gap-1"><Trophy size={16}/> 1</span> : 
+                           idx === 1 ? <span className="text-gray-400 flex items-center gap-1"><Trophy size={16}/> 2</span> : 
+                           idx === 2 ? <span className="text-amber-600 flex items-center gap-1"><Trophy size={16}/> 3</span> : 
+                           <span className="text-gray-600 pl-5">{idx + 1}</span>}
+                        </td>
+                        <td className="p-4 font-bold text-gray-800">{lb.studentId?.name || 'Unknown Student'}</td>
+                        <td className="p-4 font-bold text-blue-600">{lb.score} <span className="text-xs text-gray-400 font-normal">/ {mappedData.totalMarks}</span></td>
+                        <td className="p-4 text-gray-600">
+                          {Math.floor(lb.timeTaken / 60)}m {lb.timeTaken % 60}s
+                        </td>
+                        <td className="p-4 text-emerald-600 font-bold">{lb.accuracy?.toFixed(2)}%</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>
