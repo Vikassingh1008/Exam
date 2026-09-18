@@ -83,6 +83,7 @@ const StudentDashboard = () => {
   const groupsToRender = Object.entries(testsByGroup);
 
   return (
+    <div className="space-y-8 pb-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Sleek Search Header */}
       <div className="relative mb-10">
         <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
