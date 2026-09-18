@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, CalendarDays, Clock3, FileText, ShieldCheck, Landmark, Monitor, Briefcase, GraduationCap, ChevronRight, Search, Trophy, ListChecks, Globe, Check, X } from 'lucide-react';
+import { BookOpen, CalendarDays, Clock3, FileText, ShieldCheck, Landmark, Monitor, Briefcase, GraduationCap, ChevronRight, Search, Trophy, ListChecks, Globe, Check, X, CircleHelp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../../api/axiosInstance';
 
