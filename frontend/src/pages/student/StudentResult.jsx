@@ -47,7 +47,11 @@ const StudentResult = () => {
             incorrectCount: parsed.incorrect,
             unansweredCount: parsed.unattempted,
             score: parsed.score,
-            testId: { name: parsed.testName || data.attempt.testId?.name || 'Practice Test', totalMarks: parsed.totalMarks || data.attempt.testId?.totalMarks || parsed.questions.length },
+            testId: { 
+              name: parsed.testName || data.attempt.testId?.name || 'Practice Test', 
+              totalMarks: parsed.totalMarks || data.attempt.testId?.totalMarks || parsed.questions.length,
+              sections: data.attempt.testId?.sections
+            },
             rank: data.rank || parsed.rank || '-',
             totalStudents: data.totalStudents || parsed.totalStudents || '-',
             percentile: data.percentile || parsed.percentile || 0
