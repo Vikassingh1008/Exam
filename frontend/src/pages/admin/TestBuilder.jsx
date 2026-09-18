@@ -221,14 +221,14 @@ const TestBuilder = () => {
     try {
       const translateText = async (text) => {
         if (!text) return text;
-        const res = await axios.get(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|hi`);
-        return res.data.responseData.translatedText;
+        const res = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=hi&dt=t&q=${encodeURIComponent(text)}`);
+        return res.data[0].map(item => item[0]).join('');
       };
 
       const translatedQuestionText = await translateText(activeQuestion.questionText);
       const translatedExplanation = await translateText(activeQuestion.explanation);
       
-      const newOptions = [...activeQuestion.options];
+      const newOptions = activeQuestion.options.map(opt => ({ ...opt }));
       for (let i = 0; i < newOptions.length; i++) {
         newOptions[i].optionTextHi = await translateText(newOptions[i].optionText);
       }
