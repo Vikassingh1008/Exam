@@ -60,6 +60,19 @@ const StudentExamView = () => {
   const clock = useMemo(() => `${String(Math.floor(seconds / 3600)).padStart(2, '0')}:${String(Math.floor((seconds % 3600) / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`, [seconds]);
   const currentQuestion = questions[currentIndex];
   const answered = Object.keys(answers).length;
+  
+  const sectionStarts = useMemo(() => {
+    if (!testData?.sections) return [];
+    let start = 0;
+    return testData.sections.map(sec => {
+      const currentStart = start;
+      start += sec.questions?.length || 0;
+      return { name: sec.name, start: currentStart, end: Math.max(currentStart, start - 1), count: sec.questions?.length || 0 };
+    });
+  }, [testData]);
+
+  const activeSectionIndex = sectionStarts.findIndex(sec => currentIndex >= sec.start && currentIndex <= sec.end);
+
   const goTo = (index) => { setCurrentIndex(index); setMobilePanel(false); window.scrollTo({ top: 0, behavior: 'smooth' }); };
   const toggleMarked = () => setMarked(previous => { const next = new Set(previous); next.has(currentIndex) ? next.delete(currentIndex) : next.add(currentIndex); return next; });
   const submitTest = async () => {
@@ -262,6 +275,24 @@ const StudentExamView = () => {
         </div>
       </header>
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+        {sectionStarts.length > 0 && (
+          <div className="mb-6 flex overflow-x-auto border-b border-slate-200 dark:border-slate-800 scrollbar-hide">
+            {sectionStarts.map((sec, i) => (
+              <button
+                key={i}
+                onClick={() => goTo(sec.start)}
+                className={`whitespace-nowrap px-6 py-3.5 text-sm font-bold transition-all border-b-[3px] ${
+                  activeSectionIndex === i 
+                    ? 'border-blue-600 text-blue-700 dark:border-blue-500 dark:text-blue-400 bg-blue-50/80 dark:bg-blue-900/20' 
+                    : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200'
+                }`}
+              >
+                {sec.name}
+              </button>
+            ))}
+          </div>
+        )}
+        
         <div className="mb-5 flex items-center justify-between rounded-xl border border-blue-100 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-900/20 px-4 py-3 text-sm text-blue-800 dark:text-blue-300 transition-colors duration-200">
           <span className="flex items-center gap-2"><AlertCircle size={17} /> {t.eachQuestion}</span>
           <span className="hidden font-bold sm:block">{currentIndex + 1} / {questions.length}</span>
