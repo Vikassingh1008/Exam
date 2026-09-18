@@ -197,40 +197,47 @@ const StudentDashboard = () => {
                       <article 
                         key={paper._id} 
                         onClick={() => setSelectedTest(paper)}
-                        className="group flex flex-col bg-white border border-slate-200/80 rounded-3xl overflow-hidden hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1.5 transition-all duration-300 cursor-pointer" 
+                        className="group flex flex-col bg-white border border-slate-100 rounded-[1.75rem] overflow-hidden hover:shadow-2xl hover:shadow-indigo-500/10 hover:border-indigo-100 hover:-translate-y-1 transition-all duration-500 cursor-pointer relative" 
                       >
                         {/* Thumbnail area */}
                         <div className="relative aspect-[16/9] w-full bg-slate-100 overflow-hidden">
                           {paper.thumbnail ? (
-                            <img src={paper.thumbnail} alt={paper.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
+                            <img src={paper.thumbnail} alt={paper.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />
                           ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 flex items-center justify-center group-hover:scale-105 transition-transform duration-700 ease-out">
-                              <span className="text-white font-black text-2xl opacity-20 tracking-widest uppercase rotate-[-10deg]">{paper.examName || 'TEST'}</span>
+                            <div className="w-full h-full bg-gradient-to-br from-indigo-500 via-purple-500 to-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-700 ease-out">
+                              <span className="text-white font-black text-2xl opacity-30 tracking-widest uppercase rotate-[-10deg] drop-shadow-md">{paper.examName || 'TEST'}</span>
                             </div>
                           )}
-                          <div className="absolute top-3 left-3 flex gap-2">
+                          <div className="absolute top-4 left-4 flex gap-2">
                             {paper.isFree !== false ? (
-                               <span className="bg-emerald-500 text-white text-xs font-black tracking-wide px-2.5 py-1 rounded-lg shadow-sm uppercase">FREE</span>
+                               <span className="bg-emerald-500 text-white text-[10px] sm:text-xs font-black tracking-wider px-3 py-1.5 rounded-lg shadow-md uppercase">FREE</span>
                             ) : (
-                               <span className="bg-amber-500 text-white text-xs font-black tracking-wide px-2.5 py-1 rounded-lg shadow-sm uppercase">PREMIUM</span>
+                               <span className="bg-amber-500 text-white text-[10px] sm:text-xs font-black tracking-wider px-3 py-1.5 rounded-lg shadow-md uppercase">PREMIUM</span>
                             )}
                             {paper.testType && (
-                               <span className="bg-black/60 backdrop-blur-md text-white text-xs font-bold tracking-wide px-2.5 py-1 rounded-lg shadow-sm">{paper.testType}</span>
+                               <span className="bg-black/40 backdrop-blur-md text-white text-[10px] sm:text-xs font-bold tracking-wider px-3 py-1.5 rounded-lg shadow-md uppercase">{paper.testType}</span>
                             )}
+                          </div>
+                          
+                          {/* Hover Play Button Overlay */}
+                          <div className="absolute inset-0 bg-indigo-900/0 group-hover:bg-indigo-900/20 transition-colors duration-500 flex items-center justify-center z-10">
+                            <div className="w-14 h-14 bg-white/95 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300 shadow-xl transform translate-y-4 group-hover:translate-y-0">
+                               <ChevronRight className="text-indigo-600 ml-1" size={28} strokeWidth={3} />
+                            </div>
                           </div>
                         </div>
 
-                        <div className="p-5 flex flex-col flex-grow bg-white">
-                          <h3 className="font-extrabold text-[1.15rem] text-slate-900 leading-snug mb-5 line-clamp-2 group-hover:text-indigo-600 transition-colors">{paper.name}</h3>
+                        <div className="p-6 flex flex-col flex-grow bg-gradient-to-b from-white to-slate-50/50 relative z-20">
+                          <h3 className="font-extrabold text-[1.15rem] text-slate-800 leading-snug mb-6 line-clamp-2 group-hover:text-indigo-600 transition-colors">{paper.name}</h3>
                           
-                          <div className="mt-auto grid grid-cols-2 gap-3">
-                            <div className="flex items-center justify-center gap-2 text-sm text-slate-700 bg-slate-50/80 border border-slate-100 py-2.5 px-2 rounded-xl group-hover:bg-indigo-50 group-hover:border-indigo-100 group-hover:text-indigo-700 transition-colors">
-                               <FileText size={16} className="text-indigo-500"/> 
-                               <span className="font-bold">{paper.questions?.length || 0} Qs</span>
+                          <div className="mt-auto flex flex-wrap sm:flex-nowrap gap-3">
+                            <div className="flex-1 flex items-center justify-center gap-2 text-[13px] sm:text-sm font-bold text-slate-600 bg-white border border-slate-200/80 py-2.5 px-3 rounded-xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] group-hover:bg-indigo-50/50 group-hover:border-indigo-100 group-hover:text-indigo-700 transition-all">
+                               <FileText size={18} className="text-indigo-500"/> 
+                               <span>{paper.questions?.length || 0} Qs</span>
                             </div>
-                            <div className="flex items-center justify-center gap-2 text-sm text-slate-700 bg-slate-50/80 border border-slate-100 py-2.5 px-2 rounded-xl group-hover:bg-amber-50 group-hover:border-amber-100 group-hover:text-amber-700 transition-colors">
-                               <Clock3 size={16} className="text-amber-500"/> 
-                               <span className="font-bold">{paper.duration} Min</span>
+                            <div className="flex-1 flex items-center justify-center gap-2 text-[13px] sm:text-sm font-bold text-slate-600 bg-white border border-slate-200/80 py-2.5 px-3 rounded-xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] group-hover:bg-amber-50/50 group-hover:border-amber-100 group-hover:text-amber-700 transition-all">
+                               <Clock3 size={18} className="text-amber-500"/> 
+                               <span>{paper.duration} Min</span>
                             </div>
                           </div>
                         </div>
