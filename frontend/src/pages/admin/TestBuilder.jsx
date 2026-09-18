@@ -7,6 +7,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Plus, Trash2, GripVertical, Settings, Eye, ChevronLeft, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ConfirmModal from '../../components/ConfirmModal';
+import axios from 'axios';
 
 const auth = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` } });
 
