@@ -9,6 +9,8 @@ const testSchema = new mongoose.Schema({
   totalMarks: { type: Number, required: true, default: 100 },
   passingMarks: { type: Number, default: 33 },
   negativeMarking: { type: Boolean, default: false },
+  marksPerQuestion: { type: Number, default: 1 },
+  negativeMarks: { type: Number, default: 0 },
   language: { type: String, default: 'English' },
   status: { type: String, enum: ['draft', 'published', 'archived'], default: 'draft' },
   sections: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Section' }],

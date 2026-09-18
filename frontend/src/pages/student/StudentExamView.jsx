@@ -65,12 +65,21 @@ const StudentExamView = () => {
   const submitTest = async () => {
     let correct = 0;
     let incorrect = 0;
+    let score = 0;
     
     const formattedAnswers = questions.map((q, index) => {
       const studentAns = answers[index];
       if (studentAns !== undefined) {
-         if (q.options[studentAns]?.isCorrect) correct++;
-         else incorrect++;
+         if (q.options[studentAns]?.isCorrect) {
+             correct++;
+             score += (q.marks !== undefined ? q.marks : 1);
+         }
+         else {
+             incorrect++;
+             if (testData?.negativeMarking) {
+                 score -= (q.negativeMarks !== undefined ? q.negativeMarks : 0.25);
+             }
+         }
       }
       return {
         questionId: q._id,
@@ -80,7 +89,7 @@ const StudentExamView = () => {
     });
 
     const attempted = correct + incorrect;
-    const score = Number((correct - incorrect * 0.25).toFixed(2));
+    score = Number(score.toFixed(2));
     const unattemptedCount = questions.length - attempted;
     
     try {
@@ -118,7 +127,9 @@ const StudentExamView = () => {
       totalMarks: 'Total Marks',
       submitTest: 'Submit test',
       submitPaper: 'Submit paper',
-      eachQuestion: 'Each question carries 1 mark. There is a 0.25 negative mark for an incorrect answer.',
+      eachQuestion: testData?.negativeMarking 
+        ? `Each question carries ${testData?.marksPerQuestion || 1} mark(s). There is a ${testData?.negativeMarks || 0} negative mark for an incorrect answer.`
+        : `Each question carries ${testData?.marksPerQuestion || 1} mark(s). There is no negative marking.`,
       previous: 'Previous',
       markForReview: 'Mark for review',
       markedForReview: 'Marked for review',
@@ -135,7 +146,9 @@ const StudentExamView = () => {
       totalMarks: 'कुल अंक',
       submitTest: 'टेस्ट जमा करें',
       submitPaper: 'पेपर जमा करें',
-      eachQuestion: 'प्रत्येक प्रश्न 1 अंक का है। गलत उत्तर के लिए 0.25 नकारात्मक अंक है।',
+      eachQuestion: testData?.negativeMarking 
+        ? `प्रत्येक प्रश्न ${testData?.marksPerQuestion || 1} अंक का है। गलत उत्तर के लिए ${testData?.negativeMarks || 0} नकारात्मक अंक है।`
+        : `प्रत्येक प्रश्न ${testData?.marksPerQuestion || 1} अंक का है। कोई नकारात्मक अंकन नहीं है।`,
       previous: 'पिछला',
       markForReview: 'समीक्षा के लिए चिह्नित करें',
       markedForReview: 'समीक्षा के लिए चिह्नित',

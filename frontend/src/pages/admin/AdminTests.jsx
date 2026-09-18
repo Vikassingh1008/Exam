@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import ConfirmModal from '../../components/ConfirmModal';
 
-const emptyForm = { name: '', examName: '', testType: 'Full Mock Test', description: '', duration: 60, totalMarks: 100, negativeMarking: false, language: 'English', status: 'draft' };
+const emptyForm = { name: '', examName: '', testType: 'Full Mock Test', description: '', duration: 60, totalMarks: 100, negativeMarking: false, marksPerQuestion: 1, negativeMarks: 0, language: 'English', status: 'draft' };
 const auth = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` } });
 
 const AdminTests = () => {
@@ -159,23 +159,24 @@ const AdminTests = () => {
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <form onSubmit={save} className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white shadow-xl">
-            <div className="border-b p-6">
-              <h3 className="text-xl font-bold">{editing ? 'Edit test paper' : 'Create test paper'}</h3>
+            <div className="border-b p-6 bg-gray-50/50">
+              <h3 className="text-xl font-bold text-gray-800">{editing ? 'Edit Test Paper' : 'Create New Test Paper'}</h3>
+              <p className="text-sm text-gray-500 mt-1">Configure the details and settings for your test paper below.</p>
             </div>
-            <div className="grid gap-4 p-6 sm:grid-cols-2">
+            <div className="grid gap-5 p-6 sm:grid-cols-2">
               <label className="text-sm font-medium text-gray-700 sm:col-span-2">Test paper name
-                <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="mt-1 w-full rounded-lg border p-2.5" placeholder="e.g. UP Police Mock Test 1" />
+                <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="mt-1.5 w-full rounded-lg border border-gray-300 p-2.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all" placeholder="e.g. UP Police Mock Test 1" />
               </label>
               
               <label className="text-sm font-medium text-gray-700">Select Exam / Category
-                <select required value={form.examId || ''} onChange={e => setForm({ ...form, examId: e.target.value })} className="mt-1 w-full rounded-lg border p-2.5">
+                <select required value={form.examId || ''} onChange={e => setForm({ ...form, examId: e.target.value })} className="mt-1.5 w-full rounded-lg border border-gray-300 p-2.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all bg-white">
                   <option value="">Select exam</option>
                   {exams.map(exam => <option key={exam._id} value={exam._id}>{exam.name}</option>)}
                 </select>
               </label>
               
               <label className="text-sm font-medium text-gray-700">Paper type
-                <select value={form.testType} onChange={e => setForm({ ...form, testType: e.target.value })} className="mt-1 w-full rounded-lg border p-2.5">
+                <select value={form.testType} onChange={e => setForm({ ...form, testType: e.target.value })} className="mt-1.5 w-full rounded-lg border border-gray-300 p-2.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all bg-white">
                   <option>Full Mock Test</option>
                   <option>Section Test</option>
                   <option>Practice Test</option>
@@ -184,27 +185,37 @@ const AdminTests = () => {
               </label>
 
               <label className="text-sm font-medium text-gray-700">Duration (minutes)
-                <input min="1" required type="number" value={form.duration} onChange={e => setForm({ ...form, duration: Number(e.target.value) })} className="mt-1 w-full rounded-lg border p-2.5" />
+                <input min="1" required type="number" value={form.duration} onChange={e => setForm({ ...form, duration: Number(e.target.value) })} className="mt-1.5 w-full rounded-lg border border-gray-300 p-2.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all" />
               </label>
 
               <label className="text-sm font-medium text-gray-700">Total marks
-                <input min="1" required type="number" value={form.totalMarks} onChange={e => setForm({ ...form, totalMarks: Number(e.target.value) })} className="mt-1 w-full rounded-lg border p-2.5" />
+                <input min="1" required type="number" value={form.totalMarks} onChange={e => setForm({ ...form, totalMarks: Number(e.target.value) })} className="mt-1.5 w-full rounded-lg border border-gray-300 p-2.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all" />
+              </label>
+
+              <label className="text-sm font-medium text-gray-700">Marks per question
+                <input min="1" type="number" step="any" value={form.marksPerQuestion} onChange={e => setForm({ ...form, marksPerQuestion: Number(e.target.value) })} className="mt-1.5 w-full rounded-lg border border-gray-300 p-2.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all" />
               </label>
 
               <label className="text-sm font-medium text-gray-700">Negative marking
-                <select value={form.negativeMarking ? 'yes' : 'no'} onChange={e => setForm({ ...form, negativeMarking: e.target.value === 'yes' })} className="mt-1 w-full rounded-lg border p-2.5">
+                <select value={form.negativeMarking ? 'yes' : 'no'} onChange={e => setForm({ ...form, negativeMarking: e.target.value === 'yes' })} className="mt-1.5 w-full rounded-lg border border-gray-300 p-2.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all bg-white">
                   <option value="no">No</option>
                   <option value="yes">Yes</option>
                 </select>
               </label>
 
-              <label className="text-sm font-medium text-gray-700 sm:col-span-2">Instructions / Description
-                <textarea value={form.description || ''} onChange={e => setForm({ ...form, description: e.target.value })} className="mt-1 w-full rounded-lg border p-2.5" rows="3" />
+              {form.negativeMarking && (
+                <label className="text-sm font-medium text-gray-700">Negative marks
+                  <input min="0" type="number" step="any" value={form.negativeMarks} onChange={e => setForm({ ...form, negativeMarks: Number(e.target.value) })} className="mt-1.5 w-full rounded-lg border border-gray-300 p-2.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all" />
+                </label>
+              )}
+
+              <label className={`text-sm font-medium text-gray-700 ${form.negativeMarking ? 'sm:col-span-2' : ''}`}>Instructions / Description
+                <textarea value={form.description || ''} onChange={e => setForm({ ...form, description: e.target.value })} className="mt-1.5 w-full rounded-lg border border-gray-300 p-2.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all" rows="3" />
               </label>
             </div>
-            <div className="flex justify-end gap-3 border-t p-5">
-              <button type="button" onClick={() => setOpen(false)} className="rounded-lg px-4 py-2 text-gray-600">Cancel</button>
-              <button className="rounded-lg bg-primary-600 px-4 py-2 font-medium text-white">Save test paper</button>
+            <div className="flex justify-end gap-3 border-t p-5 bg-gray-50/50">
+              <button type="button" onClick={() => setOpen(false)} className="rounded-lg px-5 py-2 text-gray-600 font-medium hover:bg-gray-200 transition-colors">Cancel</button>
+              <button className="rounded-lg bg-primary-600 px-5 py-2 font-medium text-white shadow-sm hover:bg-primary-700 transition-colors">Save test paper</button>
             </div>
           </form>
         </div>

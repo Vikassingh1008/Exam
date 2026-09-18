@@ -118,8 +118,8 @@ const TestBuilder = () => {
         testId,
         sectionId: activeSectionId,
         questionType: 'Single MCQ',
-        marks: 1,
-        negativeMarks: 0,
+        marks: test?.marksPerQuestion || 1,
+        negativeMarks: test?.negativeMarking ? (test?.negativeMarks || 0) : 0,
         options: [
           { optionLabel: 'A', optionText: 'Option 1', isCorrect: true },
           { optionLabel: 'B', optionText: 'Option 2', isCorrect: false }
