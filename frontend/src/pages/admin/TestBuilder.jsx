@@ -4,7 +4,7 @@ import api from '../../api/axiosInstance';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Plus, Trash2, GripVertical, Settings, Eye, ChevronLeft, Save } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Settings, Eye, ChevronLeft, Save, Sparkles, Upload, FileText, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ConfirmModal from '../../components/ConfirmModal';
 import axios from 'axios';
@@ -36,6 +36,7 @@ const TestBuilder = () => {
   const [editorLanguage, setEditorLanguage] = useState('en');
   const [confirmAction, setConfirmAction] = useState({ isOpen: false, type: null, payload: null, message: '', title: '' });
   const [sectionModal, setSectionModal] = useState({ isOpen: false, name: '' });
+  const [aiModal, setAiModal] = useState({ isOpen: false, tab: 'topic', topic: '', difficulty: 'Medium', count: 5, file: null, isLoading: false });
 
   // Load Test Data
   const loadTest = async () => {
@@ -132,6 +133,64 @@ const TestBuilder = () => {
       loadTest();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to create question');
+    }
+  };
+
+  const handleAIGenerate = async (e) => {
+    e.preventDefault();
+    if (!activeSectionId) return toast.error('Select a section first');
+    
+    setAiModal(prev => ({ ...prev, isLoading: true }));
+    let generatedQuestions = [];
+
+    try {
+      if (aiModal.tab === 'topic') {
+        const { data } = await api.post('/ai/generate', {
+          topic: aiModal.topic,
+          difficulty: aiModal.difficulty,
+          count: aiModal.count
+        }, auth());
+        generatedQuestions = data.questions;
+      } else {
+        if (!aiModal.file) {
+          toast.error('Please upload a PDF file');
+          setAiModal(prev => ({ ...prev, isLoading: false }));
+          return;
+        }
+        const formData = new FormData();
+        formData.append('file', aiModal.file);
+        
+        const { data } = await api.post('/ai/upload-pdf', formData, {
+          headers: { ...auth().headers, 'Content-Type': 'multipart/form-data' }
+        });
+        generatedQuestions = data.questions;
+      }
+
+      if (!generatedQuestions || generatedQuestions.length === 0) {
+        throw new Error('No questions generated');
+      }
+
+      // Save all questions sequentially
+      for (const q of generatedQuestions) {
+        const newQuestion = {
+          questionText: q.questionText,
+          testId,
+          sectionId: activeSectionId,
+          questionType: 'Single MCQ',
+          marks: test?.marksPerQuestion || 1,
+          negativeMarks: test?.negativeMarking ? (test?.negativeMarks || 0) : 0,
+          options: q.options,
+          explanation: q.explanation || ''
+        };
+        await api.post('/questions', newQuestion, auth());
+      }
+
+      toast.success(`${generatedQuestions.length} questions generated successfully!`);
+      setAiModal({ isOpen: false, tab: 'topic', topic: '', difficulty: 'Medium', count: 5, file: null, isLoading: false });
+      loadTest();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to generate questions');
+      setAiModal(prev => ({ ...prev, isLoading: false }));
     }
   };
 
@@ -316,9 +375,16 @@ const TestBuilder = () => {
 
         {/* Center Col: Questions List */}
         <div className="w-80 bg-gray-50 border-r flex flex-col shrink-0">
-          <div className="p-4 border-b flex justify-between items-center bg-white">
+          <div className="p-4 border-b flex justify-between items-center bg-white shadow-sm z-10 relative">
             <h3 className="font-semibold text-sm text-gray-700 uppercase tracking-wider">Questions</h3>
-            <button onClick={handleAddQuestion} disabled={!activeSectionId} className="text-primary-600 hover:text-primary-800 disabled:opacity-50"><Plus size={18} /></button>
+            <div className="flex gap-2">
+              <button onClick={() => setAiModal({ ...aiModal, isOpen: true })} disabled={!activeSectionId} className="flex items-center gap-1 text-xs font-semibold px-2 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200 disabled:opacity-50 transition-colors" title="Generate with AI">
+                <Sparkles size={14} /> AI
+              </button>
+              <button onClick={handleAddQuestion} disabled={!activeSectionId} className="text-primary-600 hover:text-primary-800 disabled:opacity-50 bg-primary-50 p-1 rounded transition-colors" title="Add empty question">
+                <Plus size={16} />
+              </button>
+            </div>
           </div>
           <div className="flex-1 overflow-y-auto p-2">
             {!activeSectionId ? (
@@ -564,6 +630,70 @@ const TestBuilder = () => {
             <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 border-t">
               <button type="button" onClick={() => setSectionModal({ isOpen: false, name: '' })} className="px-4 py-2 text-gray-700 font-medium hover:bg-gray-200 rounded-lg transition-colors">Cancel</button>
               <button type="submit" disabled={!sectionModal.name.trim()} className="px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors">Create Section</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* AI Modal */}
+      {aiModal.isOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+          <form onSubmit={handleAIGenerate} className="w-full max-w-lg bg-white rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-6 border-b flex justify-between items-center bg-gray-50/50">
+              <div className="flex items-center gap-2 text-purple-700">
+                <Sparkles size={20} />
+                <h3 className="text-lg font-bold text-gray-900">AI Question Generator</h3>
+              </div>
+              <button type="button" onClick={() => !aiModal.isLoading && setAiModal({ ...aiModal, isOpen: false })} className="text-gray-400 hover:text-gray-600">Close</button>
+            </div>
+            
+            <div className="p-6">
+              <div className="flex border-b mb-5">
+                <button type="button" onClick={() => setAiModal({ ...aiModal, tab: 'topic' })} className={`pb-2 px-4 font-semibold text-sm transition-colors ${aiModal.tab === 'topic' ? 'border-b-2 border-purple-600 text-purple-700' : 'text-gray-500 hover:text-gray-700'}`}>Topic</button>
+                <button type="button" onClick={() => setAiModal({ ...aiModal, tab: 'pdf' })} className={`pb-2 px-4 font-semibold text-sm transition-colors ${aiModal.tab === 'pdf' ? 'border-b-2 border-purple-600 text-purple-700' : 'text-gray-500 hover:text-gray-700'}`}>Upload PDF</button>
+              </div>
+
+              {aiModal.tab === 'topic' ? (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Topic / Subject</label>
+                    <input autoFocus type="text" required value={aiModal.topic} onChange={e => setAiModal({ ...aiModal, topic: e.target.value })} placeholder="e.g. Indian History, Basic Physics..." className="w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-purple-500 transition-all" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Difficulty</label>
+                      <select value={aiModal.difficulty} onChange={e => setAiModal({ ...aiModal, difficulty: e.target.value })} className="w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-purple-500 transition-all bg-white">
+                        <option>Easy</option>
+                        <option>Medium</option>
+                        <option>Hard</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">No. of Questions</label>
+                      <input type="number" min="1" max="20" required value={aiModal.count} onChange={e => setAiModal({ ...aiModal, count: Number(e.target.value) })} className="w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-purple-500 transition-all" />
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 italic">Questions will be generated using ChatGPT and added to the current section.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="border-2 border-dashed border-purple-200 bg-purple-50 rounded-xl p-8 text-center flex flex-col items-center justify-center">
+                    <FileText className="text-purple-400 mb-2" size={32} />
+                    <p className="text-sm font-medium text-purple-900 mb-1">Upload a PDF containing questions</p>
+                    <p className="text-xs text-purple-600 mb-4">Our AI will extract questions, options, and correct answers automatically.</p>
+                    <input type="file" accept=".pdf" id="pdf-upload" className="hidden" onChange={e => setAiModal({ ...aiModal, file: e.target.files[0] })} />
+                    <label htmlFor="pdf-upload" className="cursor-pointer bg-white border border-purple-200 text-purple-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-purple-100 transition-colors inline-flex items-center gap-2">
+                      <Upload size={16} /> {aiModal.file ? aiModal.file.name : 'Select PDF File'}
+                    </label>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50/50 border-t">
+              <button type="button" disabled={aiModal.isLoading} onClick={() => setAiModal({ ...aiModal, isOpen: false, file: null })} className="px-5 py-2 text-gray-700 font-medium hover:bg-gray-200 rounded-lg transition-colors">Cancel</button>
+              <button type="submit" disabled={aiModal.isLoading || (aiModal.tab === 'topic' && !aiModal.topic.trim()) || (aiModal.tab === 'pdf' && !aiModal.file)} className="px-5 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors flex items-center gap-2">
+                {aiModal.isLoading ? <><Loader2 size={16} className="animate-spin" /> Generating...</> : <><Sparkles size={16} /> Generate</>}
+              </button>
             </div>
           </form>
         </div>
