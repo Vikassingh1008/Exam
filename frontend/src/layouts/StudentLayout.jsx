@@ -65,7 +65,7 @@ const StudentLayout = () => {
               <BookOpen size={20} className="text-white" />
             </div>
             <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-indigo-800">
-              ExamEdge
+              ExamSetu
             </span>
           </div>
           <button onClick={() => setIsMobileMenuOpen(false)} className="xl:hidden text-gray-500 hover:text-gray-900">

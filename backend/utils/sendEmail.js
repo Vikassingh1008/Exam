@@ -31,7 +31,7 @@ const sendEmail = async (options) => {
   }
 
   const mailOptions = {
-    from: process.env.FROM_EMAIL || 'noreply@examedge.com',
+    from: process.env.FROM_EMAIL || 'noreply@examsetu.com',
     to: options.email,
     subject: options.subject,
     text: options.message,

@@ -21,13 +21,13 @@ import ForgotPassword from './pages/student/ForgotPassword';
 import ResetPassword from './pages/student/ResetPassword';
 
 // Public Pages
-const LandingPage = () => <div className="p-8 text-center"><h1 className="text-4xl font-bold text-primary-600">ExamEdge</h1><p className="mt-4">Prepare Smarter. Practice Better. Score Higher.</p></div>;
+const LandingPage = () => <div className="p-8 text-center"><h1 className="text-4xl font-bold text-primary-600">ExamSetu</h1><p className="mt-4">Prepare Smarter. Practice Better. Score Higher.</p></div>;
 
 // Protected Student Pages
 // We now import StudentDashboard from its file
 
 // Protected Admin Pages
-const AdminDashboard = () => <div><h2 className="text-2xl font-bold text-gray-800 mb-6">Dashboard Overview</h2><p className="text-gray-600">Welcome to ExamEdge Admin Panel.</p></div>;
+const AdminDashboard = () => <div><h2 className="text-2xl font-bold text-gray-800 mb-6">Dashboard Overview</h2><p className="text-gray-600">Welcome to ExamSetu Admin Panel.</p></div>;
 
 function App() {
   return (

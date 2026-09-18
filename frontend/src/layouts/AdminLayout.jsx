@@ -35,7 +35,7 @@ const AdminLayout = () => {
       {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 flex flex-col transition-transform duration-300 ease-in-out xl:translate-x-0 xl:static xl:inset-auto ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="h-16 flex items-center justify-between px-6 border-b border-gray-200">
-          <span className="text-xl font-bold text-primary-600">ExamEdge Admin</span>
+          <span className="text-xl font-bold text-primary-600">ExamSetu Admin</span>
           <button onClick={() => setIsMobileMenuOpen(false)} className="xl:hidden text-gray-500 hover:text-gray-900">
             <X size={24} />
           </button>
