@@ -14,6 +14,8 @@ const StudentExamView = () => {
   const [answers, setAnswers] = useState({});
   const [marked, setMarked] = useState(new Set());
   const [seconds, setSeconds] = useState(7194);
+  const [timeSpent, setTimeSpent] = useState({});
+  const currentIndexRef = React.useRef(currentIndex);
   const [mobilePanel, setMobilePanel] = useState(false);
   const [language, setLanguage] = useState('en');
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -56,7 +58,18 @@ const StudentExamView = () => {
     }
   }, [isDarkMode]);
 
-  useEffect(() => { const timer = setInterval(() => setSeconds(value => Math.max(0, value - 1)), 1000); return () => clearInterval(timer); }, []);
+  useEffect(() => { currentIndexRef.current = currentIndex; }, [currentIndex]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSeconds(value => Math.max(0, value - 1));
+      setTimeSpent(prev => {
+        const idx = currentIndexRef.current;
+        return { ...prev, [idx]: (prev[idx] || 0) + 1 };
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
   const clock = useMemo(() => `${String(Math.floor(seconds / 3600)).padStart(2, '0')}:${String(Math.floor((seconds % 3600) / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`, [seconds]);
   const currentQuestion = questions[currentIndex];
   const answered = Object.keys(answers).length;
@@ -97,7 +110,8 @@ const StudentExamView = () => {
       return {
         questionId: q._id,
         selectedOptionId: studentAns !== undefined ? q.options[studentAns]?._id : null,
-        status: studentAns !== undefined ? 'answered' : (marked.has(index) ? 'marked_for_review' : 'not_visited')
+        status: studentAns !== undefined ? 'answered' : (marked.has(index) ? 'marked_for_review' : 'not_visited'),
+        timeSpent: timeSpent[index] || 0
       };
     });
 
@@ -125,7 +139,8 @@ const StudentExamView = () => {
         score, questions, testName: testData?.name || 'Practice Test', 
         totalMarks: testData?.calculatedTotalMarks || questions.length,
         rank: data.rank,
-        totalStudents: data.totalStudents
+        totalStudents: data.totalStudents,
+        timeSpent
       };
       sessionStorage.setItem(`exam-result-${data.attempt._id}`, JSON.stringify(result));
       

@@ -68,7 +68,14 @@ router.get('/my-history', authMiddleware, async (req, res) => {
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
     const attempt = await TestAttempt.findOne({ _id: req.params.id, studentId: req.user.id })
-      .populate('testId', 'name examName duration totalMarks')
+      .populate({
+        path: 'testId',
+        select: 'name examName duration totalMarks sections',
+        populate: {
+          path: 'sections.questions',
+          select: '_id category'
+        }
+      })
       .populate({
         path: 'answers.questionId',
         model: 'Question'

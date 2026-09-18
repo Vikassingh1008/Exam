@@ -104,6 +104,16 @@ const StudentResult = () => {
     let totalMaxScore = 0;
 
     const sectionsMap = {};
+    
+    // Create mapping from question ID to section name
+    const qToSectionMap = {};
+    if (attempt.testId?.sections) {
+      attempt.testId.sections.forEach(sec => {
+        sec.questions.forEach(qObj => {
+          qToSectionMap[qObj._id] = sec.name;
+        });
+      });
+    }
 
     const questionsList = attempt.answers?.map((ans, index) => {
       const q = ans.questionId;
@@ -129,18 +139,20 @@ const StudentResult = () => {
       const status = isCorrect ? 'correct' : (isIncorrect ? 'incorrect' : 'unattempted');
       const score = isCorrect ? qMarks : (isIncorrect ? -qNegative : 0);
       
-      const categoryName = q.category || 'General Awareness';
+      const sectionName = qToSectionMap[q._id] || q.category || 'General Awareness';
+      const timeSpent = ans.timeSpent || 0;
 
-      if (!sectionsMap[categoryName]) {
-        sectionsMap[categoryName] = { name: categoryName, score: 0, attempted: 0, correct: 0, incorrect: 0, unattempted: 0, totalQs: 0, maxScore: 0 };
+      if (!sectionsMap[sectionName]) {
+        sectionsMap[sectionName] = { name: sectionName, score: 0, attempted: 0, correct: 0, incorrect: 0, unattempted: 0, totalQs: 0, maxScore: 0, timeSpent: 0 };
       }
-      sectionsMap[categoryName].totalQs++;
-      sectionsMap[categoryName].maxScore += qMarks;
-      if (!isUnattempted) sectionsMap[categoryName].attempted++;
-      if (isCorrect) sectionsMap[categoryName].correct++;
-      if (isIncorrect) sectionsMap[categoryName].incorrect++;
-      if (isUnattempted) sectionsMap[categoryName].unattempted++;
-      sectionsMap[categoryName].score += score;
+      sectionsMap[sectionName].totalQs++;
+      sectionsMap[sectionName].maxScore += qMarks;
+      if (!isUnattempted) sectionsMap[sectionName].attempted++;
+      if (isCorrect) sectionsMap[sectionName].correct++;
+      if (isIncorrect) sectionsMap[sectionName].incorrect++;
+      if (isUnattempted) sectionsMap[sectionName].unattempted++;
+      sectionsMap[sectionName].score += score;
+      sectionsMap[sectionName].timeSpent += timeSpent;
 
       return {
         globalIndex: index,
@@ -148,10 +160,11 @@ const StudentResult = () => {
         options: q.options?.map(o => ({ text: language === 'hi' && o.optionTextHi ? o.optionTextHi : o.optionText })) || [],
         correctAnswer: correctOptionIndex,
         explanation: language === 'hi' && q.explanationHi ? q.explanationHi : (q.explanation || 'No explanation provided.'),
-        category: categoryName, 
+        category: sectionName, 
         studentAnswer: selectedOptionIndex !== -1 ? selectedOptionIndex : undefined,
         status,
-        score
+        score,
+        timeSpent
       };
     }).filter(Boolean) || [];
 
@@ -164,6 +177,7 @@ const StudentResult = () => {
       accuracy: attempted > 0 ? ((correct / attempted) * 100).toFixed(2) : '0.00',
       percentile: attempt.percentile || ((Math.random() * 40) + 50).toFixed(2), // Mock if missing
       testName: attempt.testId?.name || 'Unknown Test',
+      timeTaken: attempt.timeTaken || 0,
       questionsList,
       sections,
       rank: attempt.rank,
@@ -183,7 +197,15 @@ const StudentResult = () => {
   );
   if (!mappedData) return <div className="min-h-screen flex items-center justify-center bg-white p-10 text-center"><p className="text-xl">Result not found.</p></div>;
 
-  const { correct, incorrect, unattempted, accuracy, percentile, testName, totalMarks, score, questionsList, sections, rank, totalStudents, totalQuestions, attempted } = mappedData;
+  const { correct, incorrect, unattempted, accuracy, percentile, testName, totalMarks, score, questionsList, sections, rank, totalStudents, totalQuestions, attempted, timeTaken } = mappedData;
+
+  const formatTime = (seconds) => {
+    if (!seconds) return '00:00:00';
+    const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+    const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+    const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+    return h === '00' ? `${m}:${s}` : `${h}:${m}:${s}`;
+  };
 
   const barData = [
     { name: 'Correct', count: correct, percentage: totalQuestions > 0 ? Math.round((correct / totalQuestions) * 100) : 0, color: '#10b981' }, 
@@ -405,7 +427,7 @@ const StudentResult = () => {
                         <div className="text-[10px] text-gray-400">skipped</div>
                       </td>
                       <td className="py-4 px-4 border-l border-amber-200">
-                        <div className="font-bold text-amber-600 text-sm">--:--</div>
+                        <div className="font-bold text-amber-600 text-sm">{formatTime(sec.timeSpent)}</div>
                         <div className="text-[10px] text-gray-400">hh:mm:ss</div>
                       </td>
                     </tr>
@@ -438,7 +460,7 @@ const StudentResult = () => {
                       <div className="text-[10px] text-gray-500">skipped</div>
                     </td>
                     <td className="py-5 px-4 border-l border-amber-300 bg-amber-50/30">
-                      <div className="font-bold text-amber-700 text-sm">--:--</div>
+                      <div className="font-bold text-amber-700 text-sm">{formatTime(timeTaken)}</div>
                       <div className="text-[10px] text-gray-500">hh:mm:ss</div>
                     </td>
                   </tr>
