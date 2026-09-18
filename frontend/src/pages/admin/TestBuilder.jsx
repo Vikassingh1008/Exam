@@ -375,11 +375,11 @@ const TestBuilder = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Marks</label>
-                  <input type="number" min="1" value={activeQuestion.marks} onChange={e => handleQuestionChange('marks', Number(e.target.value))} className="w-full border rounded p-2 text-sm" />
+                  <input type="number" min="1" value={activeQuestion.marks} onChange={e => handleQuestionChange('marks', e.target.value === '' ? '' : Number(e.target.value))} className="w-full border rounded p-2 text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Negative Marks</label>
-                  <input type="number" min="0" step="0.25" value={activeQuestion.negativeMarks} onChange={e => handleQuestionChange('negativeMarks', Number(e.target.value))} className="w-full border rounded p-2 text-sm" />
+                  <input type="number" min="0" step="0.25" value={activeQuestion.negativeMarks} onChange={e => handleQuestionChange('negativeMarks', e.target.value === '' ? '' : Number(e.target.value))} className="w-full border rounded p-2 text-sm" />
                 </div>
               </div>
 

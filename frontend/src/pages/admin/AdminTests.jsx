@@ -185,15 +185,15 @@ const AdminTests = () => {
               </label>
 
               <label className="text-sm font-medium text-gray-700">Duration (minutes)
-                <input min="1" required type="number" value={form.duration} onChange={e => setForm({ ...form, duration: Number(e.target.value) })} className="mt-1.5 w-full rounded-lg border border-gray-300 p-2.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all" />
+                <input min="1" required type="number" value={form.duration} onChange={e => setForm({ ...form, duration: e.target.value === '' ? '' : Number(e.target.value) })} className="mt-1.5 w-full rounded-lg border border-gray-300 p-2.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all" />
               </label>
 
               <label className="text-sm font-medium text-gray-700">Total marks
-                <input min="1" required type="number" value={form.totalMarks} onChange={e => setForm({ ...form, totalMarks: Number(e.target.value) })} className="mt-1.5 w-full rounded-lg border border-gray-300 p-2.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all" />
+                <input min="1" required type="number" value={form.totalMarks} onChange={e => setForm({ ...form, totalMarks: e.target.value === '' ? '' : Number(e.target.value) })} className="mt-1.5 w-full rounded-lg border border-gray-300 p-2.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all" />
               </label>
 
               <label className="text-sm font-medium text-gray-700">Marks per question
-                <input min="1" type="number" step="any" value={form.marksPerQuestion} onChange={e => setForm({ ...form, marksPerQuestion: Number(e.target.value) })} className="mt-1.5 w-full rounded-lg border border-gray-300 p-2.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all" />
+                <input min="1" type="number" step="any" value={form.marksPerQuestion} onChange={e => setForm({ ...form, marksPerQuestion: e.target.value === '' ? '' : Number(e.target.value) })} className="mt-1.5 w-full rounded-lg border border-gray-300 p-2.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all" />
               </label>
 
               <label className="text-sm font-medium text-gray-700">Negative marking
@@ -205,7 +205,7 @@ const AdminTests = () => {
 
               {form.negativeMarking && (
                 <label className="text-sm font-medium text-gray-700">Negative marks
-                  <input min="0" type="number" step="any" value={form.negativeMarks} onChange={e => setForm({ ...form, negativeMarks: Number(e.target.value) })} className="mt-1.5 w-full rounded-lg border border-gray-300 p-2.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all" />
+                  <input min="0" type="number" step="any" value={form.negativeMarks} onChange={e => setForm({ ...form, negativeMarks: e.target.value === '' ? '' : Number(e.target.value) })} className="mt-1.5 w-full rounded-lg border border-gray-300 p-2.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all" />
                 </label>
               )}
 
