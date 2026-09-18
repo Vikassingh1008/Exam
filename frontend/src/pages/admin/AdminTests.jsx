@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import ConfirmModal from '../../components/ConfirmModal';
 
-const emptyForm = { name: '', examName: '', testType: 'Full Mock Test', description: '', duration: 60, totalMarks: 100, passingMarks: 33, negativeMarking: false, language: 'English', status: 'draft' };
+const emptyForm = { name: '', examName: '', testType: 'Full Mock Test', description: '', duration: 60, totalMarks: 100, negativeMarking: false, language: 'English', status: 'draft' };
 const auth = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` } });
 
 const AdminTests = () => {
@@ -189,10 +189,6 @@ const AdminTests = () => {
 
               <label className="text-sm font-medium text-gray-700">Total marks
                 <input min="1" required type="number" value={form.totalMarks} onChange={e => setForm({ ...form, totalMarks: Number(e.target.value) })} className="mt-1 w-full rounded-lg border p-2.5" />
-              </label>
-
-              <label className="text-sm font-medium text-gray-700">Passing marks
-                <input min="1" required type="number" value={form.passingMarks} onChange={e => setForm({ ...form, passingMarks: Number(e.target.value) })} className="mt-1 w-full rounded-lg border p-2.5" />
               </label>
 
               <label className="text-sm font-medium text-gray-700">Negative marking

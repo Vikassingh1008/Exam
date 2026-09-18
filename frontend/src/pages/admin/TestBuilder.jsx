@@ -34,6 +34,7 @@ const TestBuilder = () => {
   const [previewTest, setPreviewTest] = useState(false);
   const [editorLanguage, setEditorLanguage] = useState('en');
   const [confirmAction, setConfirmAction] = useState({ isOpen: false, type: null, payload: null, message: '', title: '' });
+  const [sectionModal, setSectionModal] = useState({ isOpen: false, name: '' });
 
   // Load Test Data
   const loadTest = async () => {
@@ -59,12 +60,17 @@ const TestBuilder = () => {
   );
 
   // Handlers for Sections
-  const handleAddSection = async () => {
-    const name = prompt('Enter section name:');
-    if (!name) return;
+  const handleAddSection = () => {
+    setSectionModal({ isOpen: true, name: '' });
+  };
+
+  const submitSection = async (e) => {
+    e.preventDefault();
+    if (!sectionModal.name.trim()) return;
     try {
-      await api.post('/sections', { name, testId }, auth());
+      await api.post('/sections', { name: sectionModal.name.trim(), testId }, auth());
       toast.success('Section created successfully');
+      setSectionModal({ isOpen: false, name: '' });
       loadTest();
     } catch (error) {
       toast.error('Failed to create section');
@@ -537,6 +543,30 @@ const TestBuilder = () => {
         onConfirm={handleConfirmAction}
         onCancel={() => setConfirmAction({ isOpen: false, type: null, payload: null, message: '', title: '' })}
       />
+
+      {/* Section Name Modal */}
+      {sectionModal.isOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+          <form onSubmit={submitSection} className="w-full max-w-sm bg-white rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Create New Section</h3>
+              <p className="text-sm text-gray-500 mb-4">Enter a name for the new section.</p>
+              <input 
+                autoFocus
+                type="text" 
+                placeholder="e.g. Quantitative Aptitude"
+                value={sectionModal.name} 
+                onChange={e => setSectionModal({...sectionModal, name: e.target.value})} 
+                className="w-full border border-gray-300 rounded-lg p-3 text-gray-900 outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+              />
+            </div>
+            <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 border-t">
+              <button type="button" onClick={() => setSectionModal({ isOpen: false, name: '' })} className="px-4 py-2 text-gray-700 font-medium hover:bg-gray-200 rounded-lg transition-colors">Cancel</button>
+              <button type="submit" disabled={!sectionModal.name.trim()} className="px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors">Create Section</button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 };

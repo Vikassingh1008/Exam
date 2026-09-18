@@ -1,4 +1,4 @@
-import { Link, Outlet, useLocation, Navigate, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, BookOpen, LogOut, ClipboardList } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { logout } from '../store/authSlice';
@@ -31,16 +31,20 @@ const AdminLayout = () => {
             const Icon = item.icon;
             const isActive = location.pathname.startsWith(item.href);
             return (
-              <Link
+              <NavLink
                 key={item.name}
                 to={item.href}
-                className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
-                  isActive ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                className={({ isActive: isNavLinkActive }) => `flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
+                  isNavLinkActive || isActive ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 }`}
               >
-                <Icon size={20} className={isActive ? 'text-primary-600' : 'text-gray-400'} />
-                <span className="font-medium">{item.name}</span>
-              </Link>
+                {({ isActive: isNavLinkActive }) => (
+                  <>
+                    <Icon size={20} className={isNavLinkActive || isActive ? 'text-primary-600' : 'text-gray-400'} />
+                    <span className="font-medium">{item.name}</span>
+                  </>
+                )}
+              </NavLink>
             );
           })}
         </nav>
