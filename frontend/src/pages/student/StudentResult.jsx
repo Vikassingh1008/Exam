@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import api from '../../api/axiosInstance';
 import { 
   ArrowLeft, CheckCircle2, XCircle, ChevronDown, 
-  ChevronRight, CircleHelp, Trophy, Target, Star, ListChecks 
+  ChevronRight, CircleHelp, Trophy, Target, Star, ListChecks, BarChart3 
 } from 'lucide-react';
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, LabelList } from 'recharts';
 
