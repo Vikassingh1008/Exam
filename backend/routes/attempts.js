@@ -99,11 +99,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
     const attempt = await TestAttempt.findOne({ _id: req.params.id, studentId: req.user.id })
       .populate({
         path: 'testId',
-        select: 'name examName duration totalMarks sections',
-        populate: {
-          path: 'sections.questions',
-          select: '_id category'
-        }
+        select: 'name examName duration totalMarks'
       })
       .populate({
         path: 'answers.questionId',
@@ -112,11 +108,29 @@ router.get('/:id', authMiddleware, async (req, res) => {
       
     if (!attempt) return res.status(404).json({ success: false, message: 'Attempt not found' });
     
+    // Manually fetch sections to ensure we don't rely on the empty test.sections array
+    const Section = require('../models/Section');
+    const Question = require('../models/Question');
+    
+    const sections = await Section.find({ testId: attempt.testId._id }).sort('displayOrder');
+    const sectionsWithQuestions = [];
+    
+    for (const section of sections) {
+      const questions = await Question.find({ sectionId: section._id }).select('_id category').sort('displayOrder');
+      sectionsWithQuestions.push({
+        ...section.toObject(),
+        questions: questions
+      });
+    }
+    
+    const attemptObj = attempt.toObject();
+    attemptObj.testId.sections = sectionsWithQuestions;
+    
     // Calculate Rank
     const totalStudents = await TestAttempt.countDocuments({ testId: attempt.testId._id });
     const rank = await TestAttempt.countDocuments({ testId: attempt.testId._id, score: { $gt: attempt.score } }) + 1;
 
-    res.json({ success: true, attempt, rank, totalStudents });
+    res.json({ success: true, attempt: attemptObj, rank, totalStudents });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server Error' });
   }
