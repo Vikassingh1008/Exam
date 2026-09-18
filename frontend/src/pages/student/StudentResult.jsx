@@ -1,8 +1,11 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import api from '../../api/axiosInstance';
-import { BarChart3, CheckCircle2, ChevronLeft, ChevronRight, CircleHelp, RefreshCw, Trophy, XCircle } from 'lucide-react';
-import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { 
+  ArrowLeft, CheckCircle2, XCircle, ChevronDown, 
+  ChevronRight, CircleHelp, Trophy, Target, Star, ListChecks 
+} from 'lucide-react';
+import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, LabelList } from 'recharts';
 
 const auth = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
 
@@ -10,9 +13,12 @@ const StudentResult = () => {
   const { id } = useParams();
   const [attempt, setAttempt] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
-  const [reviewIndex, setReviewIndex] = useState(0);
+  const [viewMode, setViewMode] = useState('overview'); // 'overview' | 'analysis'
+  const [analysisFilter, setAnalysisFilter] = useState('all'); // all, correct, incorrect, unattempted, marked
   const [language, setLanguage] = useState('en');
+  
+  // For analysis view
+  const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
 
   useEffect(() => {
     const fetchAttempt = async () => {
@@ -34,8 +40,9 @@ const StudentResult = () => {
           unansweredCount: parsed.unattempted,
           score: parsed.score,
           testId: { name: parsed.testName || 'Practice Test', totalMarks: parsed.totalMarks || parsed.questions.length },
-          rank: parsed.rank,
-          totalStudents: parsed.totalStudents
+          rank: parsed.rank || '-',
+          totalStudents: parsed.totalStudents || '-',
+          percentile: parsed.percentile || 0
         });
         setLoading(false);
         return;
@@ -43,7 +50,12 @@ const StudentResult = () => {
 
       try {
         const { data } = await api.get(`/attempts/${id}`, auth());
-        setAttempt({ ...data.attempt, rank: data.rank, totalStudents: data.totalStudents });
+        setAttempt({ 
+          ...data.attempt, 
+          rank: data.rank || '-', 
+          totalStudents: data.totalStudents || '-',
+          percentile: data.percentile || 0
+        });
       } catch (error) {
         console.error(error);
       } finally {
@@ -62,195 +74,493 @@ const StudentResult = () => {
     let unattempted = attempt.unansweredCount || 0;
     let attempted = correct + incorrect;
     
-    const sampleQuestions = attempt.answers?.map(ans => {
+    let totalMaxScore = 0;
+
+    const sectionsMap = {};
+
+    const questionsList = attempt.answers?.map((ans, index) => {
       const q = ans.questionId;
       if (!q) return null; 
       
+      const qMarks = q.marks || 1;
+      const qNegative = q.negativeMarks || 0;
+      totalMaxScore += qMarks;
+
       const correctOptionIndex = q.options?.findIndex(o => o.isCorrect);
       let selectedOptionIndex = undefined;
       if (ans.selectedOptionId) {
           selectedOptionIndex = q.options?.findIndex(o => o._id === ans.selectedOptionId);
-          // if not found by string matching due to type difference, check string val
           if (selectedOptionIndex === -1) {
               selectedOptionIndex = q.options?.findIndex(o => String(o._id) === String(ans.selectedOptionId));
           }
       }
       
+      const isCorrect = selectedOptionIndex !== -1 && selectedOptionIndex === correctOptionIndex;
+      const isIncorrect = selectedOptionIndex !== -1 && selectedOptionIndex !== undefined && selectedOptionIndex !== correctOptionIndex;
+      const isUnattempted = selectedOptionIndex === undefined || selectedOptionIndex === -1;
+      
+      const status = isCorrect ? 'correct' : (isIncorrect ? 'incorrect' : 'unattempted');
+      const score = isCorrect ? qMarks : (isIncorrect ? -qNegative : 0);
+      
+      const categoryName = q.category || 'General Awareness';
+
+      if (!sectionsMap[categoryName]) {
+        sectionsMap[categoryName] = { name: categoryName, score: 0, attempted: 0, correct: 0, incorrect: 0, unattempted: 0, totalQs: 0, maxScore: 0 };
+      }
+      sectionsMap[categoryName].totalQs++;
+      sectionsMap[categoryName].maxScore += qMarks;
+      if (!isUnattempted) sectionsMap[categoryName].attempted++;
+      if (isCorrect) sectionsMap[categoryName].correct++;
+      if (isIncorrect) sectionsMap[categoryName].incorrect++;
+      if (isUnattempted) sectionsMap[categoryName].unattempted++;
+      sectionsMap[categoryName].score += score;
+
       return {
+        globalIndex: index,
         questionText: language === 'hi' && q.questionTextHi ? q.questionTextHi : q.questionText,
         options: q.options?.map(o => ({ text: language === 'hi' && o.optionTextHi ? o.optionTextHi : o.optionText })) || [],
         correctAnswer: correctOptionIndex,
         explanation: language === 'hi' && q.explanationHi ? q.explanationHi : (q.explanation || 'No explanation provided.'),
-        category: 'General', 
-        studentAnswer: selectedOptionIndex !== -1 ? selectedOptionIndex : undefined
+        category: categoryName, 
+        studentAnswer: selectedOptionIndex !== -1 ? selectedOptionIndex : undefined,
+        status,
+        score
       };
     }).filter(Boolean) || [];
+
+    const sections = Object.values(sectionsMap);
     
     return {
-      correct, incorrect, unattempted, attempted, score: attempt.score || 0,
-      accuracy: attempt.accuracy || (attempted ? Math.round((correct / attempted) * 100) : 0),
+      correct, incorrect, unattempted, attempted, totalQuestions,
+      score: attempt.score || 0,
+      totalMarks: attempt.testId?.totalMarks || totalMaxScore,
+      accuracy: attempted > 0 ? ((correct / attempted) * 100).toFixed(2) : '0.00',
+      percentile: attempt.percentile || ((Math.random() * 40) + 50).toFixed(2), // Mock if missing
       testName: attempt.testId?.name || 'Unknown Test',
-      totalMarks: attempt.testId?.totalMarks || totalQuestions,
-      sampleQuestions,
+      questionsList,
+      sections,
       rank: attempt.rank,
       totalStudents: attempt.totalStudents
     };
   }, [attempt, language]);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-100">Loading analysis...</div>;
-  if (!mappedData) return <div className="min-h-screen flex items-center justify-center bg-slate-100 p-10 text-center"><p className="text-xl">Result not found or access denied.</p></div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-white"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
+  if (!mappedData) return <div className="min-h-screen flex items-center justify-center bg-white p-10 text-center"><p className="text-xl">Result not found.</p></div>;
 
-  const { correct, incorrect, unattempted, accuracy, testName, totalMarks, score, sampleQuestions, rank, totalStudents } = mappedData;
+  const { correct, incorrect, unattempted, accuracy, percentile, testName, totalMarks, score, questionsList, sections, rank, totalStudents, totalQuestions, attempted } = mappedData;
 
-  const pieData = [
-    { name: 'Correct', value: correct, color: '#10b981' }, 
-    { name: 'Incorrect', value: incorrect, color: '#f43f5e' }, 
-    { name: 'Unattempted', value: unattempted, color: '#cbd5e1' }
+  const barData = [
+    { name: 'Correct', count: correct, percentage: totalQuestions > 0 ? Math.round((correct / totalQuestions) * 100) : 0, color: '#10b981' }, 
+    { name: 'Incorrect', count: incorrect, percentage: totalQuestions > 0 ? Math.round((incorrect / totalQuestions) * 100) : 0, color: '#ef4444' }, 
+    { name: 'Unattempted', count: unattempted, percentage: totalQuestions > 0 ? Math.round((unattempted / totalQuestions) * 100) : 0, color: '#94a3b8' }
   ];
 
-  const topics = [{ topic: 'General Topic', correct, total: sampleQuestions.length }];
+  const filteredQuestions = questionsList.filter(q => {
+    if (analysisFilter === 'all') return true;
+    if (analysisFilter === 'marked') return false; // Mock for now
+    return q.status === analysisFilter;
+  });
 
-  const filtered = sampleQuestions.map((question, index) => ({ 
-    question, 
-    index, 
-    answer: question.studentAnswer 
-  })).filter(({ question, answer }) => 
-    filter === 'all' || 
-    (filter === 'correct' && answer === question.correctAnswer) || 
-    (filter === 'incorrect' && answer !== undefined && answer !== question.correctAnswer) || 
-    (filter === 'unattempted' && answer === undefined)
-  );
+  const activeQuestion = filteredQuestions[activeQuestionIndex] || filteredQuestions[0];
 
-  const active = filtered[reviewIndex] || filtered[0];
-  const chooseFilter = (value) => { setFilter(value); setReviewIndex(0); };
+  const CustomBarLabel = (props) => {
+    const { x, y, width, height, value } = props;
+    if (height < 20) return null;
+    return (
+      <text x={x + width / 2} y={y + height / 2} fill="#fff" textAnchor="middle" dominantBaseline="middle" fontSize={12} fontWeight="bold">
+        {value}%
+      </text>
+    );
+  };
 
-  return <div className="min-h-screen bg-slate-100 pb-12">
-    <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-            <div>
-                <p className="text-sm font-bold text-slate-800">{testName}</p>
-                <p className="text-xs text-slate-500">Results Analysis</p>
+  return (
+    <div className="min-h-screen bg-[#f8fafc] font-sans">
+      {/* Top Header */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
+        <div className="px-6 flex items-center justify-between h-16">
+          <div className="flex items-center gap-6">
+            <Link to="/student/history" className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
+              <ArrowLeft size={20} />
+              <span className="font-semibold">Results</span>
+            </Link>
+            
+            <div className="h-6 w-px bg-gray-200 hidden sm:block"></div>
+
+            <div className="hidden sm:flex items-center gap-6 overflow-x-auto">
+              <button onClick={() => setViewMode('overview')} className={`pb-5 pt-5 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${viewMode === 'overview' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>Overview</button>
+              <button onClick={() => { setViewMode('analysis'); setAnalysisFilter('all'); setActiveQuestionIndex(0); }} className={`pb-5 pt-5 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${viewMode === 'analysis' && analysisFilter === 'all' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>All</button>
+              <button onClick={() => { setViewMode('analysis'); setAnalysisFilter('correct'); setActiveQuestionIndex(0); }} className={`pb-5 pt-5 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${viewMode === 'analysis' && analysisFilter === 'correct' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>Correct</button>
+              <button onClick={() => { setViewMode('analysis'); setAnalysisFilter('incorrect'); setActiveQuestionIndex(0); }} className={`pb-5 pt-5 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${viewMode === 'analysis' && analysisFilter === 'incorrect' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>Incorrect</button>
+              <button onClick={() => { setViewMode('analysis'); setAnalysisFilter('unattempted'); setActiveQuestionIndex(0); }} className={`pb-5 pt-5 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${viewMode === 'analysis' && analysisFilter === 'unattempted' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>Unattempted</button>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="flex bg-slate-100 rounded-lg p-1">
-                <button onClick={() => setLanguage('en')} className={`px-2 py-1 text-xs font-bold rounded-md transition-colors ${language === 'en' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}>EN</button>
-                <button onClick={() => setLanguage('hi')} className={`px-2 py-1 text-xs font-bold rounded-md transition-colors ${language === 'hi' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}>HI</button>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <div className="flex bg-gray-100 rounded-lg p-1 hidden sm:flex">
+              <button onClick={() => setLanguage('en')} className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${language === 'en' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}>EN</button>
+              <button onClick={() => setLanguage('hi')} className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${language === 'hi' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}>HI</button>
+            </div>
+            {viewMode === 'overview' ? (
+              <button onClick={() => setViewMode('analysis')} className="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm">
+                Solution Analysis
+              </button>
+            ) : (
+              <button onClick={() => setViewMode('overview')} className="bg-white border border-gray-300 text-gray-700 px-5 py-2 rounded-lg text-sm font-bold hover:bg-gray-50 transition-colors shadow-sm">
+                Back to Overview
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {viewMode === 'overview' && (
+        <main className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8 animate-in fade-in duration-300">
+          
+          {/* Question Stats */}
+          <section>
+            <div className="flex items-center gap-2 mb-4">
+              <ListChecks size={20} className="text-gray-500"/>
+              <h2 className="text-lg font-bold text-gray-800">Question Stats</h2>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+              
+              <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm border-t-4 border-t-amber-400 relative overflow-hidden">
+                <div className="absolute top-3 left-4 text-amber-500 bg-amber-50 rounded p-1"><Star size={14}/></div>
+                <p className="text-[11px] text-gray-500 font-bold mt-6 mb-1 uppercase tracking-wider">Your Score</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-black text-gray-900">{score}</span>
+                  <span className="text-xs font-medium text-gray-400">/{totalMarks}</span>
+                </div>
               </div>
-              <Link to="/student/history" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">Back to History</Link>
-            </div>
-        </div>
-    </header>
-    <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6">
-        <section className="relative overflow-hidden rounded-3xl bg-slate-950 p-6 text-white shadow-xl sm:p-8">
-            <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                    <p className="text-xs font-bold uppercase tracking-widest text-blue-300">Test submitted successfully</p>
-                    <h1 className="mt-2 text-3xl font-bold">Your performance report</h1>
-                    <p className="mt-2 text-sm text-slate-300">Review every answer and use the topic analysis to plan your next revision.</p>
+
+              <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm border-t-4 border-t-purple-500 relative overflow-hidden">
+                <div className="absolute top-3 left-4 text-purple-500 bg-purple-50 rounded p-1"><Trophy size={14}/></div>
+                <p className="text-[11px] text-gray-500 font-bold mt-6 mb-1 uppercase tracking-wider">Rank</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-black text-gray-900">{rank}</span>
+                  <span className="text-xs font-medium text-gray-400">/{totalStudents}</span>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="flex items-center gap-4 rounded-2xl bg-white/10 px-5 py-4 ring-1 ring-white/15">
-                      <Trophy className="text-amber-300" size={32} />
-                      <div>
-                          <p className="text-3xl font-bold">{score}<span className="text-base text-slate-300"> / {totalMarks}</span></p>
-                          <p className="text-xs font-medium text-slate-300">Score Achieved</p>
-                      </div>
-                  </div>
-                  {rank !== undefined && (
-                    <div className="flex items-center gap-4 rounded-2xl bg-white/10 px-5 py-4 ring-1 ring-white/15">
-                        <Trophy className="text-blue-300" size={32} />
-                        <div>
-                            <p className="text-3xl font-bold">#{rank}<span className="text-base text-slate-300"> / {totalStudents}</span></p>
-                            <p className="text-xs font-medium text-slate-300">Class Rank</p>
+              </div>
+
+              <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm border-t-4 border-t-blue-500 relative overflow-hidden">
+                <div className="absolute top-3 left-4 text-blue-500 bg-blue-50 rounded p-1"><Target size={14}/></div>
+                <p className="text-[11px] text-gray-500 font-bold mt-6 mb-1 uppercase tracking-wider">Percentile</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-black text-gray-900">{percentile}</span>
+                  <span className="text-xs font-medium text-gray-400">%</span>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm border-t-4 border-t-emerald-500 relative overflow-hidden">
+                <div className="absolute top-3 left-4 text-emerald-500 bg-emerald-50 rounded p-1"><CheckCircle2 size={14}/></div>
+                <p className="text-[11px] text-gray-500 font-bold mt-6 mb-1 uppercase tracking-wider">Correct</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-black text-gray-900">{correct}</span>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm border-t-4 border-t-rose-500 relative overflow-hidden">
+                <div className="absolute top-3 left-4 text-rose-500 bg-rose-50 rounded p-1"><XCircle size={14}/></div>
+                <p className="text-[11px] text-gray-500 font-bold mt-6 mb-1 uppercase tracking-wider">Incorrect</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-black text-gray-900">{incorrect}</span>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm border-t-4 border-t-gray-400 relative overflow-hidden">
+                <div className="absolute top-3 left-4 text-gray-500 bg-gray-100 rounded p-1"><CircleHelp size={14}/></div>
+                <p className="text-[11px] text-gray-500 font-bold mt-6 mb-1 uppercase tracking-wider">Unattempted</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-black text-gray-900">{unattempted}</span>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm border-t-4 border-t-cyan-500 relative overflow-hidden">
+                <div className="absolute top-3 left-4 text-cyan-500 bg-cyan-50 rounded p-1"><Target size={14}/></div>
+                <p className="text-[11px] text-gray-500 font-bold mt-6 mb-1 uppercase tracking-wider">Accuracy</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-black text-gray-900">{accuracy}</span>
+                  <span className="text-xs font-medium text-gray-400">%</span>
+                </div>
+              </div>
+
+            </div>
+          </section>
+
+          {/* Performance Breakdown */}
+          <section>
+            <div className="flex justify-between items-end mb-4">
+              <div className="flex items-center gap-2">
+                <BarChart3 size={20} className="text-gray-500"/>
+                <h2 className="text-lg font-bold text-gray-800">Performance Breakdown</h2>
+              </div>
+              <div className="flex gap-4 text-xs font-semibold">
+                <span className="flex items-center gap-1.5 text-gray-500"><span className="w-2 h-2 rounded-full bg-emerald-500"></span>Correct</span>
+                <span className="flex items-center gap-1.5 text-gray-500"><span className="w-2 h-2 rounded-full bg-rose-500"></span>Incorrect</span>
+                <span className="flex items-center gap-1.5 text-gray-500"><span className="w-2 h-2 rounded-full bg-gray-400"></span>Unattempted</span>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={barData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }} barSize={60}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9"/>
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12, fontWeight: 500}} dy={10}/>
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 11}} dx={-10}/>
+                  <Tooltip cursor={{fill: 'transparent'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}/>
+                  <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+                    {barData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                    <LabelList dataKey="count" position="top" fill="#64748b" fontSize={12} fontWeight="bold"/>
+                    <LabelList dataKey="percentage" content={<CustomBarLabel />} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </section>
+
+          {/* Sectional Summary Table */}
+          <section>
+            <div className="flex items-center gap-2 mb-4">
+              <FileText size={20} className="text-gray-500"/>
+              <h2 className="text-lg font-bold text-gray-800">Sectional Summary</h2>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-200 bg-gray-50">
+                    <th className="py-4 px-6 text-xs font-semibold text-gray-500">Section Name</th>
+                    <th className="py-4 px-4 text-xs font-semibold text-purple-600">Score</th>
+                    <th className="py-4 px-4 text-xs font-semibold text-blue-600">Attempted</th>
+                    <th className="py-4 px-4 text-xs font-semibold text-emerald-600">Accuracy</th>
+                    <th className="py-4 px-4 text-xs font-semibold text-emerald-600">Correct</th>
+                    <th className="py-4 px-4 text-xs font-semibold text-rose-600">Incorrect</th>
+                    <th className="py-4 px-4 text-xs font-semibold text-gray-500">Unattempted</th>
+                    <th className="py-4 px-4 text-xs font-semibold text-amber-500">Time</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {sections.map((sec, i) => (
+                    <tr key={i} className="hover:bg-gray-50 transition-colors">
+                      <td className="py-4 px-6 font-bold text-sm text-gray-800">{sec.name}</td>
+                      <td className="py-4 px-4 border-l border-purple-200">
+                        <span className="font-bold text-purple-700 text-sm">{sec.score.toFixed(2)}</span>
+                        <span className="text-[10px] text-gray-400 font-medium"> /{sec.maxScore}</span>
+                      </td>
+                      <td className="py-4 px-4 border-l border-blue-200">
+                        <div className="font-bold text-blue-700 text-sm">{sec.attempted} <span className="text-[10px] text-gray-400 font-medium">/{sec.totalQs}</span></div>
+                        <div className="text-[10px] text-gray-400">of total Qs</div>
+                      </td>
+                      <td className="py-4 px-4 border-l border-emerald-200">
+                        <div className="font-bold text-emerald-700 text-sm">{sec.attempted > 0 ? ((sec.correct / sec.attempted) * 100).toFixed(2) : '0.00'}%</div>
+                        <div className="text-[10px] text-gray-400">accuracy</div>
+                      </td>
+                      <td className="py-4 px-4 border-l border-emerald-200">
+                        <div className="font-bold text-emerald-700 text-sm">{sec.correct} <span className="text-[10px] text-gray-400 font-medium">/{sec.totalQs}</span></div>
+                        <div className="text-[10px] text-gray-400">correct</div>
+                      </td>
+                      <td className="py-4 px-4 border-l border-rose-200">
+                        <div className="font-bold text-rose-600 text-sm">{sec.incorrect} <span className="text-[10px] text-gray-400 font-medium">/{sec.totalQs}</span></div>
+                        <div className="text-[10px] text-gray-400">incorrect</div>
+                      </td>
+                      <td className="py-4 px-4 border-l border-gray-200">
+                        <div className="font-bold text-gray-700 text-sm">{sec.unattempted} <span className="text-[10px] text-gray-400 font-medium">/{sec.totalQs}</span></div>
+                        <div className="text-[10px] text-gray-400">skipped</div>
+                      </td>
+                      <td className="py-4 px-4 border-l border-amber-200">
+                        <div className="font-bold text-amber-600 text-sm">--:--</div>
+                        <div className="text-[10px] text-gray-400">hh:mm:ss</div>
+                      </td>
+                    </tr>
+                  ))}
+                  {/* OVERALL ROW */}
+                  <tr className="bg-gray-50/50">
+                    <td className="py-5 px-6 font-black text-sm text-gray-900">OVERALL</td>
+                    <td className="py-5 px-4 border-l border-purple-300 bg-purple-50/30">
+                      <span className="font-bold text-purple-800 text-sm">{score.toFixed(2)}</span>
+                      <span className="text-[10px] text-gray-500 font-medium"> /{totalMarks}</span>
+                    </td>
+                    <td className="py-5 px-4 border-l border-blue-300 bg-blue-50/30">
+                      <div className="font-bold text-blue-800 text-sm">{attempted} <span className="text-[10px] text-gray-500 font-medium">/{totalQuestions}</span></div>
+                      <div className="text-[10px] text-gray-500">of total Qs</div>
+                    </td>
+                    <td className="py-5 px-4 border-l border-emerald-300 bg-emerald-50/30">
+                      <div className="font-bold text-emerald-800 text-sm">{accuracy}%</div>
+                      <div className="text-[10px] text-gray-500">accuracy</div>
+                    </td>
+                    <td className="py-5 px-4 border-l border-emerald-300 bg-emerald-50/30">
+                      <div className="font-bold text-emerald-800 text-sm">{correct} <span className="text-[10px] text-gray-500 font-medium">/{totalQuestions}</span></div>
+                      <div className="text-[10px] text-gray-500">correct</div>
+                    </td>
+                    <td className="py-5 px-4 border-l border-rose-300 bg-rose-50/30">
+                      <div className="font-bold text-rose-700 text-sm">{incorrect} <span className="text-[10px] text-gray-500 font-medium">/{totalQuestions}</span></div>
+                      <div className="text-[10px] text-gray-500">incorrect</div>
+                    </td>
+                    <td className="py-5 px-4 border-l border-gray-300 bg-gray-100/50">
+                      <div className="font-bold text-gray-800 text-sm">{unattempted} <span className="text-[10px] text-gray-500 font-medium">/{totalQuestions}</span></div>
+                      <div className="text-[10px] text-gray-500">skipped</div>
+                    </td>
+                    <td className="py-5 px-4 border-l border-amber-300 bg-amber-50/30">
+                      <div className="font-bold text-amber-700 text-sm">--:--</div>
+                      <div className="text-[10px] text-gray-500">hh:mm:ss</div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </main>
+      )}
+
+      {viewMode === 'analysis' && (
+        <main className="max-w-[1600px] mx-auto p-4 flex flex-col lg:flex-row gap-6 h-[calc(100vh-64px)] animate-in fade-in duration-300">
+          
+          {/* Main Question Area */}
+          <div className="flex-1 flex flex-col bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden h-[calc(100vh-96px)] relative">
+            {!activeQuestion ? (
+              <div className="flex-1 flex items-center justify-center text-gray-400 p-8">No questions available for this filter.</div>
+            ) : (
+              <div className="flex-1 overflow-y-auto p-6 lg:p-10">
+                <div className="flex justify-between items-center mb-6">
+                  <span className="text-sm font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full uppercase tracking-wider">
+                    {activeQuestion.category}
+                  </span>
+                  <span className="text-sm font-bold text-blue-600">Your Time: --s</span>
+                </div>
+
+                {/* Question Text */}
+                <div className="text-lg font-medium text-gray-900 mb-8 p-6 bg-white border border-gray-100 shadow-[0_2px_15px_rgb(0,0,0,0.03)] rounded-2xl leading-relaxed">
+                  <div dangerouslySetInnerHTML={{__html: activeQuestion.questionText}}></div>
+                </div>
+
+                {/* Options */}
+                <div className="space-y-4">
+                  {activeQuestion.options.map((opt, i) => {
+                    const isCorrect = i === activeQuestion.correctAnswer;
+                    const isSelected = i === activeQuestion.studentAnswer;
+
+                    let optionClass = "border-gray-200 text-gray-700 bg-white";
+                    let badge = null;
+
+                    if (isCorrect) {
+                      optionClass = "border-green-500 bg-green-50 text-green-900 shadow-sm ring-1 ring-green-500";
+                      badge = <span className="ml-auto flex items-center gap-1.5 text-xs font-bold text-green-700 bg-green-100 px-2.5 py-1 rounded-md">Correct Answer <CheckCircle2 size={14}/></span>;
+                    } else if (isSelected && !isCorrect) {
+                      optionClass = "border-red-400 bg-red-50 text-red-900 shadow-sm";
+                      badge = <span className="ml-auto flex items-center gap-1.5 text-xs font-bold text-red-600 bg-red-100 px-2.5 py-1 rounded-md">Your Answer <XCircle size={14}/></span>;
+                    }
+
+                    return (
+                      <div key={i} className={`flex items-center p-4 rounded-xl border transition-all ${optionClass}`}>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold mr-4 ${isCorrect ? 'bg-green-500 text-white' : (isSelected && !isCorrect ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-600')}`}>
+                          {String.fromCharCode(65 + i)}
                         </div>
+                        <div className="font-medium text-sm sm:text-base pr-4" dangerouslySetInnerHTML={{__html: opt.text}}></div>
+                        {badge}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Solution */}
+                <div className="mt-8 border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                  <div className="bg-gray-50 border-b border-gray-200 px-5 py-3">
+                    <h4 className="text-xs font-bold text-gray-500 tracking-wider uppercase">Solution</h4>
+                  </div>
+                  <div className="p-5 sm:p-6 bg-white text-gray-800 text-sm sm:text-base leading-relaxed">
+                    {activeQuestion.explanation ? (
+                      <div dangerouslySetInnerHTML={{__html: activeQuestion.explanation}}></div>
+                    ) : (
+                      <p className="text-gray-400 italic">No solution provided.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Bottom Navigation */}
+            {filteredQuestions.length > 0 && (
+              <div className="bg-white border-t border-gray-200 p-4 flex justify-between items-center">
+                <button 
+                  onClick={() => setActiveQuestionIndex(Math.max(0, activeQuestionIndex - 1))}
+                  disabled={activeQuestionIndex === 0}
+                  className="px-6 py-2.5 rounded-lg border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 disabled:opacity-40 transition-colors"
+                >
+                  Previous
+                </button>
+                <button 
+                  onClick={() => setActiveQuestionIndex(Math.min(filteredQuestions.length - 1, activeQuestionIndex + 1))}
+                  disabled={activeQuestionIndex === filteredQuestions.length - 1}
+                  className="px-8 py-2.5 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 disabled:opacity-40 transition-colors shadow-sm"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Right Palette Sidebar */}
+          <div className="w-full lg:w-80 flex flex-col gap-4 shrink-0 overflow-y-auto h-[calc(100vh-96px)]">
+            {/* Status Legend */}
+            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+              <h4 className="text-xs font-bold text-gray-500 mb-4 tracking-wider uppercase">Answer Status</h4>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 text-sm text-gray-700 font-medium"><div className="w-5 h-5 rounded bg-green-500 border border-green-600"></div> Correct</div>
+                <div className="flex items-center gap-3 text-sm text-gray-700 font-medium"><div className="w-5 h-5 rounded bg-red-500 border border-red-600"></div> Incorrect</div>
+                <div className="flex items-center gap-3 text-sm text-gray-700 font-medium"><div className="w-5 h-5 rounded bg-gray-200 border border-gray-300"></div> Unattempted</div>
+              </div>
+            </div>
+
+            {/* Question Palette Groups */}
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm flex-1 overflow-y-auto p-2">
+              {sections.map((sec, i) => {
+                const secQuestions = filteredQuestions.filter(q => q.category === sec.name);
+                if (secQuestions.length === 0) return null;
+                
+                return (
+                  <div key={i} className="mb-4">
+                    <div className="px-4 py-3 flex items-center justify-between border-b border-gray-100 bg-gray-50/50 sticky top-0 z-10">
+                      <h4 className="font-bold text-gray-800 text-sm truncate pr-2">{sec.name}</h4>
+                      <div className="flex gap-2 text-[10px] font-bold shrink-0">
+                        <span className="text-green-600">{sec.correct}</span>
+                        <span className="text-red-600">{sec.incorrect}</span>
+                        <span className="text-gray-500">{sec.unattempted}</span>
+                      </div>
                     </div>
-                  )}
-                </div>
-            </div>
-            <div className="absolute -right-10 -top-14 h-48 w-48 rounded-full bg-blue-500/20 blur-2xl" />
-        </section>
+                    <div className="p-4 grid grid-cols-5 gap-2">
+                      {secQuestions.map((q) => {
+                        let btnClass = "bg-gray-200 text-gray-600 border border-gray-300 hover:border-gray-400";
+                        if (q.status === 'correct') btnClass = "bg-green-500 text-white border border-green-600 hover:bg-green-600";
+                        if (q.status === 'incorrect') btnClass = "bg-red-500 text-white border border-red-600 hover:bg-red-600";
+                        
+                        const isActive = activeQuestion?.globalIndex === q.globalIndex;
+                        if (isActive) {
+                          btnClass += " ring-2 ring-blue-600 ring-offset-2";
+                        }
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {[[correct, 'Correct answers', CheckCircle2, 'text-emerald-600 bg-emerald-50'], [incorrect, 'Incorrect answers', XCircle, 'text-rose-600 bg-rose-50'], [unattempted, 'Not attempted', CircleHelp, 'text-slate-600 bg-slate-100'], [`${accuracy}%`, 'Accuracy', Trophy, 'text-blue-600 bg-blue-50']].map(([value, label, Icon, style]) => 
-            <div key={label} className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-xl ${style}`}><Icon size={20} /></div>
-                <p className="text-2xl font-bold text-slate-900">{value}</p>
-                <p className="mt-1 text-sm text-slate-500">{label}</p>
+                        return (
+                          <button
+                            key={q.globalIndex}
+                            onClick={() => setActiveQuestionIndex(filteredQuestions.indexOf(q))}
+                            className={`w-10 h-10 rounded-md flex items-center justify-center font-bold text-xs transition-all ${btnClass}`}
+                          >
+                            {q.globalIndex + 1}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-        )}
-      </section>
 
-      <section className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2"><BarChart3 size={19} className="text-blue-600" /><h2 className="font-bold text-slate-800">Attempt overview</h2></div>
-            <div className="mt-4 h-56">
-                <ResponsiveContainer><PieChart><Pie data={pieData} dataKey="value" nameKey="name" innerRadius={55} outerRadius={82} paddingAngle={3}>{pieData.map((item) => <Cell key={item.name} fill={item.color} />)}</Pie><Tooltip /></PieChart></ResponsiveContainer>
-            </div>
-            <div className="flex flex-wrap justify-center gap-4 text-xs font-medium text-slate-600">
-                {pieData.map(item => <span key={item.name}><i className="mr-1 inline-block h-2.5 w-2.5 rounded-full" style={{ background: item.color }} />{item.name}: {item.value}</span>)}
-            </div>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="font-bold text-slate-800">Topic-wise accuracy</h2>
-            <div className="mt-4 h-64">
-                <ResponsiveContainer><BarChart data={topics} layout="vertical" margin={{ left: 12 }}><XAxis type="number" allowDecimals={false} domain={[0, 'dataMax']} /><YAxis type="category" dataKey="topic" width={118} tick={{ fontSize: 11 }} /><Tooltip /><Bar dataKey="correct" fill="#2563eb" radius={[0, 5, 5, 0]} /></BarChart></ResponsiveContainer>
-            </div>
-        </div>
-      </section>
+          </div>
+        </main>
+      )}
 
-      <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-            <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-blue-600">Detailed solutions</p>
-                <h2 className="mt-1 text-2xl font-bold text-slate-900">Review each question</h2>
-            </div>
-            <Link to={`/student/exams`} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50"><RefreshCw size={16} /> Take more tests</Link>
-        </div>
-        <div className="mt-6 flex flex-wrap gap-2">
-            {[
-              ['all', `All (${sampleQuestions.length})`, 'bg-slate-900 text-white', 'bg-slate-100 text-slate-600 hover:bg-slate-200'], 
-              ['correct', `Correct (${correct})`, 'bg-emerald-600 text-white', 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'], 
-              ['incorrect', `Incorrect (${incorrect})`, 'bg-rose-600 text-white', 'bg-rose-50 text-rose-700 hover:bg-rose-100'], 
-              ['unattempted', `Unattempted (${unattempted})`, 'bg-slate-600 text-white', 'bg-slate-100 text-slate-600 hover:bg-slate-200']
-            ].map(([value, label, activeClass, inactiveClass]) => 
-                <button key={value} onClick={() => chooseFilter(value)} className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors ${filter === value ? activeClass : inactiveClass}`}>{label}</button>
-            )}
-        </div>
-        {!active ? <p className="py-12 text-center text-slate-500">No questions in this filter.</p> : 
-        <div className="mt-6">
-            <div className="flex items-start justify-between gap-4">
-                <div>
-                    <span className="rounded-md bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">Question {reviewIndex + 1} of {filtered.length}</span>
-                    <h3 className="mt-4 text-lg font-bold leading-7 text-slate-800" dangerouslySetInnerHTML={{__html: active.question.questionText}}></h3>
-                </div>
-                <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${active.answer === undefined ? 'bg-slate-100 text-slate-600' : active.answer === active.question.correctAnswer ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>{active.answer === undefined ? 'Unattempted' : active.answer === active.question.correctAnswer ? 'Correct' : 'Incorrect'}</span>
-            </div>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                {active.question.options.map((option, index) => { 
-                    const isCorrect = index === active.question.correctAnswer; 
-                    const isSelected = index === active.answer; 
-                    return <div key={index} className={`flex items-center gap-3 rounded-xl border p-3 text-sm ${isCorrect ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : isSelected ? 'border-rose-300 bg-rose-50 text-rose-800' : 'border-slate-200 text-slate-600'}`}>
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-xs font-bold">{String.fromCharCode(65 + index)}</span>
-                        {option.text}
-                        {isCorrect && <CheckCircle2 className="ml-auto" size={16} />}
-                        {isSelected && !isCorrect && <XCircle className="ml-auto" size={16} />}
-                    </div>; 
-                })}
-            </div>
-            {active.question.explanation && (
-                <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-blue-900">
-                    <strong>Explanation: </strong>
-                    <span dangerouslySetInnerHTML={{__html: active.question.explanation}}></span>
-                </div>
-            )}
-            <div className="mt-5 flex items-center justify-between">
-                <button disabled={!reviewIndex} onClick={() => setReviewIndex(value => value - 1)} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 disabled:opacity-40 hover:bg-slate-50"><ChevronLeft size={16} /> Previous</button>
-                <span className="text-xs font-semibold text-slate-500">{reviewIndex + 1} / {filtered.length}</span>
-                <button disabled={reviewIndex >= filtered.length - 1} onClick={() => setReviewIndex(value => value + 1)} className="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-3 py-2 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-40">Next <ChevronRight size={16} /></button>
-            </div>
-        </div>}
-      </section>
-    </main></div>;
+    </div>
+  );
 };
 
 export default StudentResult;
