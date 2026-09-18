@@ -20,6 +20,7 @@ const StudentResult = () => {
   
   // For analysis view
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
+  const [activeSectionFilter, setActiveSectionFilter] = useState('All');
 
   useEffect(() => {
     const fetchAttempt = async () => {
@@ -226,6 +227,7 @@ const StudentResult = () => {
   ];
 
   const filteredQuestions = questionsList.filter(q => {
+    if (activeSectionFilter !== 'All' && q.category !== activeSectionFilter) return false;
     if (analysisFilter === 'all') return true;
     if (analysisFilter === 'marked') return false; // Mock for now
     return q.status === analysisFilter;
@@ -258,7 +260,7 @@ const StudentResult = () => {
 
             <div className="hidden sm:flex items-center gap-6 overflow-x-auto">
               <button onClick={() => setViewMode('overview')} className={`pb-5 pt-5 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${viewMode === 'overview' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>Overview</button>
-              <button onClick={() => { setViewMode('analysis'); setAnalysisFilter('all'); setActiveQuestionIndex(0); }} className={`pb-5 pt-5 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${viewMode === 'analysis' && analysisFilter === 'all' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>All</button>
+              <button onClick={() => { setViewMode('analysis'); setAnalysisFilter('all'); setActiveSectionFilter(sections[0]?.name || 'All'); setActiveQuestionIndex(0); }} className={`pb-5 pt-5 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${viewMode === 'analysis' && analysisFilter === 'all' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>All</button>
               <button onClick={() => { setViewMode('analysis'); setAnalysisFilter('correct'); setActiveQuestionIndex(0); }} className={`pb-5 pt-5 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${viewMode === 'analysis' && analysisFilter === 'correct' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>Correct</button>
               <button onClick={() => { setViewMode('analysis'); setAnalysisFilter('incorrect'); setActiveQuestionIndex(0); }} className={`pb-5 pt-5 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${viewMode === 'analysis' && analysisFilter === 'incorrect' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>Incorrect</button>
               <button onClick={() => { setViewMode('analysis'); setAnalysisFilter('unattempted'); setActiveQuestionIndex(0); }} className={`pb-5 pt-5 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${viewMode === 'analysis' && analysisFilter === 'unattempted' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>Unattempted</button>
@@ -487,7 +489,27 @@ const StudentResult = () => {
       )}
 
       {viewMode === 'analysis' && (
-        <main className="max-w-[1600px] mx-auto p-4 flex flex-col lg:flex-row gap-6 h-[calc(100vh-64px)] animate-in fade-in duration-300">
+        <div className="max-w-[1600px] mx-auto p-4 animate-in fade-in duration-300 flex flex-col h-[calc(100vh-64px)]">
+          {/* Section Tabs */}
+          <div className="flex gap-2 overflow-x-auto border-b border-gray-200 mb-6 pb-1 scrollbar-hide">
+            <button 
+              onClick={() => { setActiveSectionFilter('All'); setActiveQuestionIndex(0); }}
+              className={`px-4 py-2 text-sm font-bold whitespace-nowrap transition-colors rounded-t-lg ${activeSectionFilter === 'All' ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600' : 'text-gray-500 hover:bg-gray-50'}`}
+            >
+              All Sections
+            </button>
+            {sections.map((sec, i) => (
+              <button 
+                key={i}
+                onClick={() => { setActiveSectionFilter(sec.name); setActiveQuestionIndex(0); }}
+                className={`px-4 py-2 text-sm font-bold whitespace-nowrap transition-colors rounded-t-lg ${activeSectionFilter === sec.name ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600' : 'text-gray-500 hover:bg-gray-50'}`}
+              >
+                {sec.name}
+              </button>
+            ))}
+          </div>
+
+          <main className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0">
           
           {/* Main Question Area */}
           <div className="flex-1 flex flex-col bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden h-[calc(100vh-96px)] relative">
@@ -587,49 +609,36 @@ const StudentResult = () => {
 
             {/* Question Palette Groups */}
             <div className="bg-white border border-gray-200 rounded-xl shadow-sm flex-1 overflow-y-auto p-2">
-              {sections.map((sec, i) => {
-                const secQuestions = filteredQuestions.filter(q => q.category === sec.name);
-                if (secQuestions.length === 0) return null;
-                
-                return (
-                  <div key={i} className="mb-4">
-                    <div className="px-4 py-3 flex items-center justify-between border-b border-gray-100 bg-gray-50/50 sticky top-0 z-10">
-                      <h4 className="font-bold text-gray-800 text-sm truncate pr-2">{sec.name}</h4>
-                      <div className="flex gap-2 text-[10px] font-bold shrink-0">
-                        <span className="text-green-600">{sec.correct}</span>
-                        <span className="text-red-600">{sec.incorrect}</span>
-                        <span className="text-gray-500">{sec.unattempted}</span>
-                      </div>
-                    </div>
-                    <div className="p-4 grid grid-cols-5 gap-2">
-                      {secQuestions.map((q) => {
-                        let btnClass = "bg-gray-200 text-gray-600 border border-gray-300 hover:border-gray-400";
-                        if (q.status === 'correct') btnClass = "bg-green-500 text-white border border-green-600 hover:bg-green-600";
-                        if (q.status === 'incorrect') btnClass = "bg-red-500 text-white border border-red-600 hover:bg-red-600";
-                        
-                        const isActive = activeQuestion?.globalIndex === q.globalIndex;
-                        if (isActive) {
-                          btnClass += " ring-2 ring-blue-600 ring-offset-2";
-                        }
+              <div className="p-4 grid grid-cols-5 gap-2">
+                {filteredQuestions.map((q) => {
+                  let btnClass = "bg-gray-200 text-gray-600 border border-gray-300 hover:border-gray-400";
+                  if (q.status === 'correct') btnClass = "bg-green-500 text-white border border-green-600 hover:bg-green-600";
+                  if (q.status === 'incorrect') btnClass = "bg-red-500 text-white border border-red-600 hover:bg-red-600";
+                  
+                  const isActive = activeQuestion?.globalIndex === q.globalIndex;
+                  if (isActive) {
+                    btnClass += " ring-2 ring-blue-600 ring-offset-2";
+                  }
 
-                        return (
-                          <button
-                            key={q.globalIndex}
-                            onClick={() => setActiveQuestionIndex(filteredQuestions.indexOf(q))}
-                            className={`w-10 h-10 rounded-md flex items-center justify-center font-bold text-xs transition-all ${btnClass}`}
-                          >
-                            {q.globalIndex + 1}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
+                  // Find local index in its section to display if section is selected, else show global
+                  const displayNum = activeSectionFilter === 'All' ? q.globalIndex + 1 : filteredQuestions.indexOf(q) + 1;
+
+                  return (
+                    <button
+                      key={q.globalIndex}
+                      onClick={() => setActiveQuestionIndex(filteredQuestions.indexOf(q))}
+                      className={`w-10 h-10 rounded-md flex items-center justify-center font-bold text-xs transition-all ${btnClass}`}
+                    >
+                      {displayNum}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
           </div>
         </main>
+        </div>
       )}
 
       {viewMode === 'leaderboard' && (
