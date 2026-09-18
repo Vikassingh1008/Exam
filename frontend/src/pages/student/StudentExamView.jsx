@@ -219,7 +219,8 @@ const StudentExamView = () => {
       <div className="p-5">
         <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t.questionPalette}</p>
         <div className="mt-4 grid grid-cols-5 gap-2">
-          {questions.map((_, index) => {
+          {sectionStarts[activeSectionIndex] && Array.from({ length: sectionStarts[activeSectionIndex].count }).map((_, i) => {
+            const index = sectionStarts[activeSectionIndex].start + i;
             const isCurrent = index === currentIndex;
             const isAnswered = answers[index] !== undefined;
             const isMarked = marked.has(index);
@@ -227,7 +228,7 @@ const StudentExamView = () => {
               <button 
                 onClick={() => goTo(index)} 
                 key={index} 
-                aria-label={`Go to question ${index + 1}`} 
+                aria-label={`Go to question ${i + 1}`} 
                 className={`relative h-9 rounded-lg text-xs font-bold transition ${
                   isCurrent 
                     ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 ring-2 ring-slate-300 dark:ring-slate-700' 
@@ -238,15 +239,15 @@ const StudentExamView = () => {
                         : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
-                {index + 1}
+                {i + 1}
                 {isMarked && <Bookmark size={9} className="absolute right-0.5 top-0.5" fill="currentColor" />}
               </button>
             );
           })}
         </div>
         <div className="mt-5 grid grid-cols-2 gap-y-2 text-xs text-slate-500 dark:text-slate-400">
-          <span className="flex items-center"><i className="mr-2 inline-block h-2.5 w-2.5 rounded-sm bg-emerald-500" /> {t.answered} ({answered})</span>
-          <span className="flex items-center"><i className="mr-2 inline-block h-2.5 w-2.5 rounded-sm bg-amber-400" /> {t.marked} ({marked.size})</span>
+          <span className="flex items-center"><i className="mr-2 inline-block h-2.5 w-2.5 rounded-sm bg-emerald-500" /> {t.answered}</span>
+          <span className="flex items-center"><i className="mr-2 inline-block h-2.5 w-2.5 rounded-sm bg-amber-400" /> {t.marked}</span>
           <span className="flex items-center"><i className="mr-2 inline-block h-2.5 w-2.5 rounded-sm bg-slate-200 dark:bg-slate-700" /> {t.notVisited}</span>
           <span className="flex items-center"><i className="mr-2 inline-block h-2.5 w-2.5 rounded-sm bg-slate-900 dark:bg-slate-100" /> {t.current}</span>
         </div>
@@ -310,13 +311,17 @@ const StudentExamView = () => {
         
         <div className="mb-5 flex items-center justify-between rounded-xl border border-blue-100 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-900/20 px-4 py-3 text-sm text-blue-800 dark:text-blue-300 transition-colors duration-200">
           <span className="flex items-center gap-2"><AlertCircle size={17} /> {t.eachQuestion}</span>
-          <span className="hidden font-bold sm:block">{currentIndex + 1} / {questions.length}</span>
+          {sectionStarts[activeSectionIndex] && (
+            <span className="hidden font-bold sm:block">
+              {currentIndex - sectionStarts[activeSectionIndex].start + 1} / {sectionStarts[activeSectionIndex].count}
+            </span>
+          )}
         </div>
         {mobilePanel && <div className="mb-5 lg:hidden">{palette}</div>}
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
           <section>
             <QuestionCard 
-              questionNumber={currentIndex + 1} 
+              questionNumber={sectionStarts[activeSectionIndex] ? (currentIndex - sectionStarts[activeSectionIndex].start + 1) : (currentIndex + 1)} 
               questionText={language === 'hi' && currentQuestion.questionTextHi ? currentQuestion.questionTextHi : currentQuestion.questionText} 
               options={currentQuestion.options.map(o => ({ text: language === 'hi' && o.optionTextHi ? o.optionTextHi : o.optionText }))} 
               selectedOption={answers[currentIndex]} 
