@@ -197,50 +197,51 @@ const StudentDashboard = () => {
                     {groupTests.map((paper) => (
                       <article 
                         key={paper._id} 
-                        onClick={() => { setSelectedTest(paper); setTermsAccepted(false); }}
-                        className="group flex flex-col bg-white border border-slate-100 rounded-[1.75rem] overflow-hidden hover:shadow-2xl hover:shadow-indigo-500/10 hover:border-indigo-100 hover:-translate-y-1 transition-all duration-500 cursor-pointer relative" 
+                        className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-[0_2px_10px_rgb(0,0,0,0.03)] hover:shadow-lg transition-all duration-300 flex flex-col" 
                       >
-                        {/* Thumbnail area */}
-                        <div className="relative aspect-[16/9] w-full bg-slate-100 overflow-hidden">
-                          {paper.thumbnail ? (
-                            <img src={paper.thumbnail} alt={paper.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-indigo-500 via-purple-500 to-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-700 ease-out">
-                              <span className="text-white font-black text-2xl opacity-30 tracking-widest uppercase rotate-[-10deg] drop-shadow-md">{paper.examName || 'TEST'}</span>
-                            </div>
-                          )}
-                          <div className="absolute top-4 left-4 flex gap-2">
-                            {paper.isFree !== false ? (
-                               <span className="bg-emerald-500 text-white text-[10px] sm:text-xs font-black tracking-wider px-3 py-1.5 rounded-lg shadow-md uppercase">FREE</span>
+                        <div className="p-5 flex flex-col h-full">
+                          {/* Badges */}
+                          <div className="flex items-center gap-2 mb-4">
+                            {paper.hasAttempted ? (
+                              <span className="flex items-center gap-1.5 px-2 py-1 text-[10px] sm:text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md tracking-wider uppercase">
+                                <Check size={14}/> ATTEMPTED
+                              </span>
                             ) : (
-                               <span className="bg-amber-500 text-white text-[10px] sm:text-xs font-black tracking-wider px-3 py-1.5 rounded-lg shadow-md uppercase">PREMIUM</span>
-                            )}
-                            {paper.testType && (
-                               <span className="bg-black/40 backdrop-blur-md text-white text-[10px] sm:text-xs font-bold tracking-wider px-3 py-1.5 rounded-lg shadow-md uppercase">{paper.testType}</span>
+                              <>
+                                <span className="flex items-center gap-1.5 px-2 py-1 text-[10px] sm:text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200 rounded-md tracking-wider uppercase">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse"></div> LIVE
+                                </span>
+                                {paper.isFree !== false && (
+                                  <span className="px-2 py-1 text-[10px] sm:text-xs font-bold text-white bg-emerald-500 rounded-md tracking-wider uppercase shadow-sm">
+                                    FREE
+                                  </span>
+                                )}
+                              </>
                             )}
                           </div>
                           
-                          {/* Hover Play Button Overlay */}
-                          <div className="absolute inset-0 bg-indigo-900/0 group-hover:bg-indigo-900/20 transition-colors duration-500 flex items-center justify-center z-10">
-                            <div className="w-14 h-14 bg-white/95 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300 shadow-xl transform translate-y-4 group-hover:translate-y-0">
-                               <ChevronRight className="text-indigo-600 ml-1" size={28} strokeWidth={3} />
-                            </div>
+                          {/* Logo and Title */}
+                          <div className="flex gap-4 items-start mb-5">
+                            <img src="/examsetu-logo.jpg" alt="ExamSetu" className="w-14 h-14 rounded-lg object-cover shadow-sm border border-gray-100 shrink-0 bg-white" />
+                            <h3 className="font-extrabold text-gray-900 text-lg leading-snug line-clamp-2">{paper.name}</h3>
                           </div>
-                        </div>
-
-                        <div className="p-6 flex flex-col flex-grow bg-gradient-to-b from-white to-slate-50/50 relative z-20">
-                          <h3 className="font-extrabold text-[1.15rem] text-slate-800 leading-snug mb-6 line-clamp-2 group-hover:text-indigo-600 transition-colors">{paper.name}</h3>
                           
-                          <div className="mt-auto flex flex-wrap sm:flex-nowrap gap-3">
-                            <div className="flex-1 flex items-center justify-center gap-2 text-[13px] sm:text-sm font-bold text-slate-600 bg-white border border-slate-200/80 py-2.5 px-3 rounded-xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] group-hover:bg-indigo-50/50 group-hover:border-indigo-100 group-hover:text-indigo-700 transition-all">
-                               <FileText size={18} className="text-indigo-500"/> 
-                               <span>{paper.questions?.length || 0} Qs</span>
-                            </div>
-                            <div className="flex-1 flex items-center justify-center gap-2 text-[13px] sm:text-sm font-bold text-slate-600 bg-white border border-slate-200/80 py-2.5 px-3 rounded-xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] group-hover:bg-amber-50/50 group-hover:border-amber-100 group-hover:text-amber-700 transition-all">
-                               <Clock3 size={18} className="text-amber-500"/> 
-                               <span>{paper.duration} Min</span>
-                            </div>
+                          {/* Meta Data */}
+                          <div className="flex items-center flex-wrap gap-4 text-xs font-semibold text-gray-400 mb-6 mt-auto">
+                            <span className="flex items-center gap-1"><CircleHelp size={14}/> {paper.questions?.length || 0} Qs</span>
+                            <span className="flex items-center gap-1"><Clock3 size={14}/> {paper.duration} Minutes</span>
+                            <span className="text-gray-500">{paper.marks || (paper.questions?.length || 0)} Marks</span>
                           </div>
+                          
+                          {/* Actions */}
+                          {paper.hasAttempted ? (
+                            <div className="flex gap-3 mt-auto">
+                              <Link to={`/student/results/${paper.attemptId}`} className="flex-1 px-4 py-2.5 text-sm font-bold text-blue-600 bg-white border-2 border-blue-600 rounded-lg hover:bg-blue-50 text-center transition-colors">Results</Link>
+                              <button onClick={() => { setSelectedTest(paper); setTermsAccepted(false); }} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm">Reattempt <ChevronRight size={16}/></button>
+                            </div>
+                          ) : (
+                            <button onClick={() => { setSelectedTest(paper); setTermsAccepted(false); }} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm mt-auto">Attempt <ChevronRight size={16}/></button>
+                          )}
                         </div>
                       </article>
                     ))}
