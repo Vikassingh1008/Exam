@@ -219,24 +219,17 @@ const StudentDashboard = () => {
                           </div>
                         </div>
 
-                        <div className="p-5 flex flex-col flex-grow">
-                          <h3 className="font-bold text-[1.1rem] text-slate-900 leading-snug mb-4 line-clamp-2 group-hover:text-blue-600 transition-colors">{paper.name}</h3>
+                        <div className="p-5 flex flex-col flex-grow bg-white">
+                          <h3 className="font-extrabold text-[1.15rem] text-slate-900 leading-snug mb-5 line-clamp-2 group-hover:text-indigo-600 transition-colors">{paper.name}</h3>
                           
-                          <div className="mt-auto grid grid-cols-2 gap-3 mb-5">
-                            <div className="flex items-center gap-2 text-sm text-slate-600 bg-slate-50 p-2 rounded-xl">
-                               <FileText size={16} className="text-blue-500"/> 
+                          <div className="mt-auto grid grid-cols-2 gap-3">
+                            <div className="flex items-center justify-center gap-2 text-sm text-slate-700 bg-slate-50/80 border border-slate-100 py-2.5 px-2 rounded-xl group-hover:bg-indigo-50 group-hover:border-indigo-100 group-hover:text-indigo-700 transition-colors">
+                               <FileText size={16} className="text-indigo-500"/> 
                                <span className="font-bold">{paper.questions?.length || 0} Qs</span>
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-slate-600 bg-slate-50 p-2 rounded-xl">
+                            <div className="flex items-center justify-center gap-2 text-sm text-slate-700 bg-slate-50/80 border border-slate-100 py-2.5 px-2 rounded-xl group-hover:bg-amber-50 group-hover:border-amber-100 group-hover:text-amber-700 transition-colors">
                                <Clock3 size={16} className="text-amber-500"/> 
                                <span className="font-bold">{paper.duration} Min</span>
-                            </div>
-                          </div>
-
-                          <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                            <span className="text-sm font-black text-slate-800 tracking-wide">VIEW NOW</span>
-                            <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-sm">
-                              <ChevronRight size={20} strokeWidth={3} />
                             </div>
                           </div>
                         </div>
