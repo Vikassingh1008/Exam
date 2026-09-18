@@ -306,7 +306,7 @@ const StudentDashboard = () => {
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-gray-400 mb-1">Language</p>
-                    <p className="text-lg font-bold text-gray-800">hi / en</p>
+                    <p className="text-lg font-bold text-gray-800">Hindi/English</p>
                   </div>
                 </div>
               </div>
