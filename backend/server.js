@@ -11,7 +11,6 @@ const questionRoutes = require('./routes/questions');
 const categoryRoutes = require('./routes/categories');
 const testRoutes = require('./routes/tests');
 const attemptRoutes = require('./routes/attempts');
-const aiRoutes = require('./routes/ai');
 
 const app = express();
 
@@ -29,7 +28,6 @@ app.use('/api/questions', questionRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/tests', testRoutes);
 app.use('/api/attempts', attemptRoutes);
-app.use('/api/ai', aiRoutes);
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
