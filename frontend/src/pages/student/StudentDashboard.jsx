@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, CalendarDays, Clock3, FileText, ShieldCheck, Landmark, Monitor, Briefcase, GraduationCap, ChevronRight, Search } from 'lucide-react';
+import { BookOpen, CalendarDays, Clock3, FileText, ShieldCheck, Landmark, Monitor, Briefcase, GraduationCap, ChevronRight, Search, Trophy, ListChecks, Globe, Check, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../../api/axiosInstance';
 
@@ -21,6 +21,7 @@ const StudentDashboard = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedExam, setSelectedExam] = useState('All');
   const [selectedTest, setSelectedTest] = useState(null);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -196,7 +197,7 @@ const StudentDashboard = () => {
                     {groupTests.map((paper) => (
                       <article 
                         key={paper._id} 
-                        onClick={() => setSelectedTest(paper)}
+                        onClick={() => { setSelectedTest(paper); setTermsAccepted(false); }}
                         className="group flex flex-col bg-white border border-slate-100 rounded-[1.75rem] overflow-hidden hover:shadow-2xl hover:shadow-indigo-500/10 hover:border-indigo-100 hover:-translate-y-1 transition-all duration-500 cursor-pointer relative" 
                       >
                         {/* Thumbnail area */}
@@ -252,20 +253,98 @@ const StudentDashboard = () => {
       )}
 
       {selectedTest && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-8">
-               <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
-                  <BookOpen size={32} />
-               </div>
-               <h3 className="text-2xl font-black text-slate-900 mb-3 leading-tight">{selectedTest.name}</h3>
-               <p className="text-slate-600 leading-relaxed mb-8">
-                  You are about to start this test. The timer of <strong className="text-slate-900">{selectedTest.duration} minutes</strong> will begin immediately. Good luck!
-               </p>
-               <div className="flex flex-col sm:flex-row gap-3">
-                  <button onClick={() => setSelectedTest(null)} className="flex-1 px-4 py-3 rounded-2xl text-sm font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors text-center">Cancel</button>
-                  <Link to={`/student/exam/${selectedTest._id}`} className="flex-1 px-4 py-3 rounded-2xl bg-blue-600 text-sm font-bold text-white hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-600/30 transition-all text-center">Start Attempt</Link>
-               </div>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto">
+          <div className="w-full max-w-5xl bg-gray-50 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-auto">
+            
+            {/* Header */}
+            <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+              <h3 className="text-xl font-bold text-slate-800">{selectedTest.name}</h3>
+              <button onClick={() => setSelectedTest(null)} className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 sm:p-8 space-y-6">
+              {/* Stat Cards Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center shrink-0">
+                    <Clock3 size={24} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 mb-1">Duration</p>
+                    <p className="text-lg font-bold text-gray-800">{selectedTest.duration} minutes</p>
+                  </div>
+                </div>
+
+                <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
+                    <ListChecks size={24} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 mb-1">Total Questions</p>
+                    <p className="text-lg font-bold text-gray-800">{selectedTest.questions?.length || 0}</p>
+                  </div>
+                </div>
+
+                <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center shrink-0">
+                    <Trophy size={24} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 mb-1">Maximum Marks</p>
+                    <p className="text-lg font-bold text-gray-800">
+                      {selectedTest.questions?.reduce((acc, q) => acc + (q.marks || 1), 0) || 0}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-purple-50 text-purple-500 flex items-center justify-center shrink-0">
+                    <Globe size={24} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 mb-1">Language</p>
+                    <p className="text-lg font-bold text-gray-800">hi / en</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Terms and Conditions Box */}
+              <div className="bg-white border border-gray-200 rounded-xl p-6 h-48 overflow-y-auto">
+                <h4 className="font-bold text-gray-800 mb-4">Terms & Conditions</h4>
+                <div className="text-sm text-gray-600 space-y-3">
+                  <p>1. The timer will start immediately upon clicking "Agree and Continue".</p>
+                  <p>2. Do not refresh the page or navigate away during the test, as this may submit your test prematurely.</p>
+                  <p>3. Ensure you have a stable internet connection.</p>
+                  <p>4. Use of any unfair means is strictly prohibited.</p>
+                  <p>5. Each correct answer awards the designated marks. Negative marking applies as per the question settings.</p>
+                </div>
+              </div>
+
+              {/* Acceptance Checkbox */}
+              <div className="flex items-start gap-3 px-1">
+                <button 
+                  onClick={() => setTermsAccepted(!termsAccepted)}
+                  className={`mt-1 w-5 h-5 rounded border flex items-center justify-center shrink-0 transition-colors ${termsAccepted ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-300 bg-white'}`}
+                >
+                  {termsAccepted && <Check size={14} strokeWidth={3} />}
+                </button>
+                <p className="text-sm text-gray-600 cursor-pointer" onClick={() => setTermsAccepted(!termsAccepted)}>
+                  I have read and agree to the <strong className="text-gray-800">Terms & Conditions</strong> of this test. I confirm that I will not use any unfair means during the test.
+                </p>
+              </div>
+
+              {/* Start Button */}
+              <div className="pt-4">
+                <Link 
+                  to={termsAccepted ? `/student/exam/${selectedTest._id}` : '#'}
+                  className={`block w-full py-4 rounded-xl text-center font-bold text-lg transition-all ${termsAccepted ? 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg' : 'bg-blue-300 text-white cursor-not-allowed'}`}
+                  onClick={(e) => { if (!termsAccepted) e.preventDefault(); }}
+                >
+                  Agree and Continue
+                </Link>
+              </div>
             </div>
           </div>
         </div>
