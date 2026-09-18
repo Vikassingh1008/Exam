@@ -193,7 +193,7 @@ const StudentDashboard = () => {
                      <h4 className="text-2xl font-extrabold text-slate-900">{groupName}</h4>
                      <span className="text-sm font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">{groupTests.length} tests</span>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8">
                     {groupTests.map((paper) => (
                       <article 
                         key={paper._id} 
