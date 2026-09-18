@@ -22,42 +22,69 @@ const StudentResult = () => {
 
   useEffect(() => {
     const fetchAttempt = async () => {
-      const localResult = sessionStorage.getItem(`exam-result-${id}`);
-      if (localResult) {
-        const parsed = JSON.parse(localResult);
-        const formattedAnswers = parsed.questions.map((q, idx) => {
-          const selectedOptionIndex = parsed.answers[idx];
-          return {
-            questionId: q,
-            selectedOptionId: selectedOptionIndex !== undefined ? q.options[selectedOptionIndex]?._id : null
-          };
-        });
-        
-        setAttempt({
-          answers: formattedAnswers,
-          correctCount: parsed.correct,
-          incorrectCount: parsed.incorrect,
-          unansweredCount: parsed.unattempted,
-          score: parsed.score,
-          testId: { name: parsed.testName || 'Practice Test', totalMarks: parsed.totalMarks || parsed.questions.length },
-          rank: parsed.rank || '-',
-          totalStudents: parsed.totalStudents || '-',
-          percentile: parsed.percentile || 0
-        });
-        setLoading(false);
-        return;
-      }
-
       try {
+        let parsed = null;
+        const localResult = sessionStorage.getItem(`exam-result-${id}`);
+        if (localResult) {
+          parsed = JSON.parse(localResult);
+        }
+
+        // Always fetch from API to get the latest Rank and Total Students
         const { data } = await api.get(`/attempts/${id}`, auth());
-        setAttempt({ 
-          ...data.attempt, 
-          rank: data.rank || '-', 
-          totalStudents: data.totalStudents || '-',
-          percentile: data.percentile || 0
-        });
+        
+        if (parsed) {
+          const formattedAnswers = parsed.questions.map((q, idx) => {
+            const selectedOptionIndex = parsed.answers[idx];
+            return {
+              questionId: q,
+              selectedOptionId: selectedOptionIndex !== undefined ? q.options[selectedOptionIndex]?._id : null
+            };
+          });
+          
+          setAttempt({
+            answers: formattedAnswers,
+            correctCount: parsed.correct,
+            incorrectCount: parsed.incorrect,
+            unansweredCount: parsed.unattempted,
+            score: parsed.score,
+            testId: { name: parsed.testName || data.attempt.testId?.name || 'Practice Test', totalMarks: parsed.totalMarks || data.attempt.testId?.totalMarks || parsed.questions.length },
+            rank: data.rank || parsed.rank || '-',
+            totalStudents: data.totalStudents || parsed.totalStudents || '-',
+            percentile: data.percentile || parsed.percentile || 0
+          });
+        } else {
+          setAttempt({ 
+            ...data.attempt, 
+            rank: data.rank || '-', 
+            totalStudents: data.totalStudents || '-',
+            percentile: data.percentile || 0
+          });
+        }
       } catch (error) {
         console.error(error);
+        // Fallback to local storage if API fails completely
+        const localResult = sessionStorage.getItem(`exam-result-${id}`);
+        if (localResult) {
+          const parsed = JSON.parse(localResult);
+          const formattedAnswers = parsed.questions.map((q, idx) => {
+            const selectedOptionIndex = parsed.answers[idx];
+            return {
+              questionId: q,
+              selectedOptionId: selectedOptionIndex !== undefined ? q.options[selectedOptionIndex]?._id : null
+            };
+          });
+          setAttempt({
+            answers: formattedAnswers,
+            correctCount: parsed.correct,
+            incorrectCount: parsed.incorrect,
+            unansweredCount: parsed.unattempted,
+            score: parsed.score,
+            testId: { name: parsed.testName || 'Practice Test', totalMarks: parsed.totalMarks || parsed.questions.length },
+            rank: parsed.rank || '-',
+            totalStudents: parsed.totalStudents || '-',
+            percentile: parsed.percentile || 0
+          });
+        }
       } finally {
         setLoading(false);
       }
