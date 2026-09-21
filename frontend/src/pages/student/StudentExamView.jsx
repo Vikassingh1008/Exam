@@ -89,6 +89,10 @@ const StudentExamView = () => {
   const goTo = (index) => { setCurrentIndex(index); setMobilePanel(false); window.scrollTo({ top: 0, behavior: 'smooth' }); };
   const toggleMarked = () => setMarked(previous => { const next = new Set(previous); next.has(currentIndex) ? next.delete(currentIndex) : next.add(currentIndex); return next; });
   const submitTest = async () => {
+    if (!window.confirm(t.finishTest + '?')) {
+      return;
+    }
+    
     let correct = 0;
     let incorrect = 0;
     let score = 0;
