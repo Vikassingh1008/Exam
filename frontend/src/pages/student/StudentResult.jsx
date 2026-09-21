@@ -34,12 +34,31 @@ const StudentResult = () => {
         // Always fetch from API to get the latest Rank and Total Students
         const { data } = await api.get(`/attempts/${id}`, auth());
         
+        // BULLETPROOF FIX: Fetch the Test directly to guarantee sections and populated questions
+        let fetchedSections = data.attempt.testId?.sections || [];
+        try {
+           const testRes = await api.get(`/tests/${data.attempt.testId._id}`, auth());
+           if (testRes.data?.test?.sections?.length) {
+              fetchedSections = testRes.data.test.sections;
+           }
+        } catch (e) {
+           console.warn("Could not fetch test directly", e);
+        }
+        
+        // Reconstruct populated questions if missing
+        let qObjectMap = {};
+        fetchedSections.forEach(sec => {
+           sec.questions.forEach(qObj => {
+               qObjectMap[qObj._id] = qObj;
+           });
+        });
+
         if (parsed) {
           const formattedAnswers = parsed.questions.map((q, idx) => {
             const selectedOptionIndex = parsed.answers[idx];
             return {
-              questionId: q,
-              selectedOptionId: selectedOptionIndex !== undefined ? q.options[selectedOptionIndex]?._id : null
+              questionId: typeof q === 'string' ? (qObjectMap[q] || q) : q,
+              selectedOptionId: selectedOptionIndex !== undefined ? q.options?.[selectedOptionIndex]?._id : null
             };
           });
           
@@ -52,15 +71,26 @@ const StudentResult = () => {
             testId: { 
               name: parsed.testName || data.attempt.testId?.name || 'Practice Test', 
               totalMarks: parsed.totalMarks || data.attempt.testId?.totalMarks || parsed.questions.length,
-              sections: data.attempt.testId?.sections
+              sections: fetchedSections
             },
             rank: data.rank || parsed.rank || '-',
             totalStudents: data.totalStudents || parsed.totalStudents || '-',
             percentile: data.percentile || parsed.percentile || 0
           });
         } else {
+          // If no session storage, ensure answers have fully populated question objects
+          const robustAnswers = data.attempt.answers.map(ans => ({
+              ...ans,
+              questionId: (typeof ans.questionId === 'string' || !ans.questionId?.options) ? (qObjectMap[typeof ans.questionId === 'object' ? ans.questionId._id : ans.questionId] || ans.questionId) : ans.questionId
+          }));
+
           setAttempt({ 
-            ...data.attempt, 
+            ...data.attempt,
+            answers: robustAnswers,
+            testId: {
+                ...data.attempt.testId,
+                sections: fetchedSections
+            },
             rank: data.rank || '-', 
             totalStudents: data.totalStudents || '-',
             percentile: data.percentile || 0
