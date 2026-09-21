@@ -228,6 +228,7 @@ const StudentResult = () => {
     }).filter(Boolean) || [];
 
     const sections = Object.values(sectionsMap);
+    const totalCalculatedTime = sections.reduce((acc, sec) => acc + (sec.timeSpent || 0), 0);
     
     return {
       correct, incorrect, unattempted, attempted, totalQuestions,
@@ -236,7 +237,7 @@ const StudentResult = () => {
       accuracy: attempted > 0 ? ((correct / attempted) * 100).toFixed(2) : '0.00',
       percentile: attempt.percentile || ((Math.random() * 40) + 50).toFixed(2), // Mock if missing
       testName: attempt.testId?.name || 'Unknown Test',
-      timeTaken: attempt.timeTaken || 0,
+      timeTaken: totalCalculatedTime > 0 ? totalCalculatedTime : (attempt.timeTaken || 0),
       questionsList,
       sections,
       rank: attempt.rank,
