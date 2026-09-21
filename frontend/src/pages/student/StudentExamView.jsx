@@ -17,6 +17,7 @@ const StudentExamView = () => {
   const [timeSpent, setTimeSpent] = useState({});
   const currentIndexRef = React.useRef(currentIndex);
   const [mobilePanel, setMobilePanel] = useState(false);
+  const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
   const [language, setLanguage] = useState('en');
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('theme');
@@ -89,10 +90,7 @@ const StudentExamView = () => {
   const goTo = (index) => { setCurrentIndex(index); setMobilePanel(false); window.scrollTo({ top: 0, behavior: 'smooth' }); };
   const toggleMarked = () => setMarked(previous => { const next = new Set(previous); next.has(currentIndex) ? next.delete(currentIndex) : next.add(currentIndex); return next; });
   const submitTest = async () => {
-    if (!window.confirm(t.finishTest + '?')) {
-      return;
-    }
-    
+    setShowConfirmSubmit(false);
     let correct = 0;
     let incorrect = 0;
     let score = 0;
@@ -257,7 +255,7 @@ const StudentExamView = () => {
         </div>
       </div>
       <div className="border-t border-slate-100 dark:border-slate-800 p-5 transition-colors duration-200">
-        <button onClick={submitTest} className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-700">{t.submitPaper}</button>
+        <button onClick={() => setShowConfirmSubmit(true)} className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-700">{t.submitPaper}</button>
       </div>
     </aside>
   );
@@ -288,7 +286,7 @@ const StudentExamView = () => {
             <button onClick={() => setMobilePanel(!mobilePanel)} className="rounded-lg border border-slate-200 dark:border-slate-700 p-2 text-slate-600 dark:text-slate-400 lg:hidden">
               {mobilePanel ? <X size={19} /> : <Menu size={19} />}
             </button>
-            <button onClick={submitTest} className="hidden rounded-lg bg-slate-900 dark:bg-blue-600 px-4 py-2 text-sm font-bold text-white sm:block hover:bg-slate-800 dark:hover:bg-blue-700 transition">
+            <button onClick={() => setShowConfirmSubmit(true)} className="hidden rounded-lg bg-slate-900 dark:bg-blue-600 px-4 py-2 text-sm font-bold text-white sm:block hover:bg-slate-800 dark:hover:bg-blue-700 transition">
               {t.submitTest}
             </button>
           </div>
@@ -351,7 +349,7 @@ const StudentExamView = () => {
                 {marked.has(currentIndex) ? t.markedForReview : t.markForReview}
               </button>
               <button 
-                onClick={() => currentIndex === questions.length - 1 ? submitTest() : setCurrentIndex(index => index + 1)} 
+                onClick={() => currentIndex === questions.length - 1 ? setShowConfirmSubmit(true) : setCurrentIndex(index => index + 1)} 
                 className="inline-flex items-center gap-1 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white hover:bg-blue-700 transition"
               >
                 {currentIndex === questions.length - 1 ? t.finishTest : t.saveAndNext} <ChevronRight size={17} />
@@ -361,6 +359,37 @@ const StudentExamView = () => {
           <div className="hidden lg:block">{palette}</div>
         </div>
       </main>
+      {/* Confirmation Modal */}
+      {showConfirmSubmit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6">
+              <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-4 text-blue-600 dark:text-blue-400">
+                <AlertCircle size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{t.finishTest}?</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-sm">
+                {language === 'hi' ? 'क्या आप वाकई अपना टेस्ट सबमिट करना चाहते हैं? एक बार सबमिट करने के बाद आप अपने उत्तर नहीं बदल पाएंगे।' : 'Are you sure you want to submit your test? Once submitted, you will not be able to change your answers.'}
+              </p>
+              
+              <div className="mt-6 flex gap-3">
+                <button 
+                  onClick={() => setShowConfirmSubmit(false)}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+                >
+                  {language === 'hi' ? 'रद्द करें' : 'Cancel'}
+                </button>
+                <button 
+                  onClick={submitTest}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition"
+                >
+                  {t.submitTest}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

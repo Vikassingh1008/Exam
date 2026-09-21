@@ -58,7 +58,8 @@ const StudentResult = () => {
             const selectedOptionIndex = parsed.answers[idx];
             return {
               questionId: typeof q === 'string' ? (qObjectMap[q] || q) : q,
-              selectedOptionId: selectedOptionIndex !== undefined ? q.options?.[selectedOptionIndex]?._id : null
+              selectedOptionId: selectedOptionIndex !== undefined ? q.options?.[selectedOptionIndex]?._id : null,
+              timeSpent: parsed.timeSpent ? parsed.timeSpent[idx] || 0 : 0
             };
           });
           
