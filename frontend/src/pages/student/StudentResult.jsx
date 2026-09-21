@@ -528,15 +528,21 @@ const StudentResult = () => {
             >
               All Sections
             </button>
-            {sections.map((sec, i) => (
-              <button 
-                key={i}
-                onClick={() => { setActiveSectionFilter(sec.name); setActiveQuestionIndex(0); }}
-                className={`px-4 py-2 text-sm font-bold whitespace-nowrap transition-colors rounded-t-lg ${activeSectionFilter === sec.name ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600' : 'text-gray-500 hover:bg-gray-50'}`}
-              >
-                {sec.name}
-              </button>
-            ))}
+            {sections.map((sec, i) => {
+              const isCurrentSection = activeQuestion?.section === sec.name;
+              const isTabActive = activeSectionFilter === sec.name;
+              const shouldHighlight = isTabActive || (activeSectionFilter === 'All' && isCurrentSection);
+
+              return (
+                <button 
+                  key={i}
+                  onClick={() => { setActiveSectionFilter(sec.name); setActiveQuestionIndex(0); }}
+                  className={`px-4 py-2 text-sm font-bold whitespace-nowrap transition-colors rounded-t-lg ${shouldHighlight ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600' : 'text-gray-500 hover:bg-gray-50'}`}
+                >
+                  {sec.name}
+                </button>
+              );
+            })}
           </div>
 
           <main className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0">
