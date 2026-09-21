@@ -102,6 +102,21 @@ const StudentResult = () => {
           const testIdStr = data.attempt.testId?._id || data.attempt.testId;
           const lbData = await api.get(`/attempts/leaderboard/${testIdStr}`, auth());
           setLeaderboard(lbData.data.leaderboard);
+          
+          // Fallback to Leaderboard data for Rank and Total Students if missing
+          setAttempt(prev => {
+             if (!prev) return prev;
+             let newRank = prev.rank;
+             if (newRank === '-' || !newRank) {
+                const lbIndex = lbData.data.leaderboard.findIndex(a => a._id === id);
+                if (lbIndex !== -1) newRank = lbIndex + 1;
+             }
+             return {
+                ...prev,
+                rank: newRank !== '-' ? newRank : prev.rank,
+                totalStudents: (prev.totalStudents === '-' && lbData.data.totalStudents) ? lbData.data.totalStudents : prev.totalStudents
+             };
+          });
         } catch (e) { console.error('Leaderboard fetch failed', e); }
       } catch (error) {
         console.error(error);
@@ -557,7 +572,7 @@ const StudentResult = () => {
                   <span className="text-sm font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full uppercase tracking-wider">
                     {activeQuestion.category}
                   </span>
-                  <span className="text-sm font-bold text-blue-600">Your Time: --s</span>
+                  <span className="text-sm font-bold text-blue-600">Your Time: {formatTime(activeQuestion.timeSpent || 0)}</span>
                 </div>
 
                 {/* Question Text */}
